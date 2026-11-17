@@ -98,96 +98,7 @@ function cleanEntry(b) {
   // Oylik chiqimlar uchun: qaysi oy hisobiga tushishi (masalan, oktyabr maoshi noyabrda toʻlansa)
   const period = b.period ? String(b.period) : null;
   if (period && !/^\d{4}-(0[1-9]|1[0-2])$/.test(period)) return 'Oy notoʻgʻri';
-  // Yem xaridi: qaysi xomashyo (ombor hisobiga kirim boʻlib tushadi)
-  const item = b.item ? String(b.item) : null;
-  if (item && !ITEM_RE.test(item)) return 'Mahsulot notoʻgʻri';
-  return { date: b.date, type: b.type, cat: b.cat, amount, qty, period, item, note: String(b.note || '').trim().slice(0, 200) };
-}
-
-/* ---------- Yem ombori: retsept (cfg) va harakatlar (yem tayyorlash, sanoq) ---------- */
-const ITEM_RE = /^[a-z0-9_]{1,24}$/;
-const SFILE = path.join(path.dirname(FILE), 'stock.json');
-const readSF = () => { try { return JSON.parse(fs.readFileSync(SFILE, 'utf8')); } catch { return {}; } };
-const writeSF = d => { fs.mkdirSync(path.dirname(SFILE), { recursive: true }); fs.writeFileSync(SFILE, JSON.stringify(d)); };
-// Boshlangʻich retsept: 19.03.2026 dagi rasion (4 000 kg partiya)
-const DEFAULT_CFG = {
-  items: [
-    ['bugdoy', 'Bugʻdoy', 2300, 3675], ['soya', 'Soya', 447, 8500], ['semichka', 'Semichka', 680, 3811],
-    ['yog', 'Yogʻ', 140, 18500], ['lizin', 'Lizin', 2, 21500], ['metionin', 'Metionin', 1.5, 70000],
-    ['monokalsiy', 'Monokalsiy', 36, 18832], ['soda', 'Soda', 6, 8000], ['tuz', 'Tuz', 8, 1300],
-    ['izvest', 'Izvest', 374, 280], ['xolin', 'Xolin', 1, 21500], ['premiks', 'Premiks', 4, 125000],
-    ['tetrabiotik', 'Tetrabiotik', 0.5, 69000]
-  ].map(([id, name, , price]) => ({ id, name, price })),
-  recipes: [{ from: '2026-03-19', parts: { bugdoy: 2300, soya: 447, semichka: 680, yog: 140, lizin: 2, metionin: 1.5,
-    monokalsiy: 36, soda: 6, tuz: 8, izvest: 374, xolin: 1, premiks: 4, tetrabiotik: 0.5 } }]
-};
-async function getStock() {
-  if (R_URL && R_TOKEN) {
-    const [c, h] = await pipeline([['GET', 'ferma:stockcfg'], ['HGETALL', 'ferma:stock']]);
-    const recs = [];
-    for (let i = 1; i < (h || []).length; i += 2) recs.push(JSON.parse(h[i]));
-    return { cfg: c ? JSON.parse(c) : DEFAULT_CFG, recs };
-  }
-  const d = readSF();
-  return { cfg: d.cfg || DEFAULT_CFG, recs: Object.values(d.recs || {}) };
-}
-async function putCfg(cfg) {
-  if (R_URL && R_TOKEN) return redis(['SET', 'ferma:stockcfg', JSON.stringify(cfg)]);
-  const d = readSF(); d.cfg = cfg; writeSF(d);
-}
-async function putRec(r) {
-  if (R_URL && R_TOKEN) return redis(['HSET', 'ferma:stock', r.id, JSON.stringify(r)]);
-  const d = readSF(); (d.recs = d.recs || {})[r.id] = r; writeSF(d);
-}
-async function delRec(id) {
-  if (R_URL && R_TOKEN) return (await redis(['HDEL', 'ferma:stock', id])) > 0;
-  const d = readSF();
-  if (!d.recs || !d.recs[id]) return false;
-  delete d.recs[id]; writeSF(d); return true;
-}
-const kgOk = v => Number.isFinite(v) && v >= 0 && v <= 1e8;
-function cleanCfg(b) {
-  b = b || {};
-  if (!Array.isArray(b.items) || !b.items.length || b.items.length > 60) return 'Mahsulotlar roʻyxati notoʻgʻri';
-  const items = [], ids = new Set();
-  for (const x of b.items) {
-    const name = String((x || {}).name || '').trim().slice(0, 40), price = Number(x.price) || 0;
-    if (!ITEM_RE.test(x.id || '') || ids.has(x.id) || !name || !kgOk(price)) return 'Mahsulot notoʻgʻri: ' + (name || x.id);
-    ids.add(x.id); items.push({ id: x.id, name, price });
-  }
-  if (!Array.isArray(b.recipes) || !b.recipes.length || b.recipes.length > 200) return 'Retsept notoʻgʻri';
-  const recipes = [];
-  for (const r of b.recipes) {
-    if (!validDate((r || {}).from)) return 'Retsept sanasi notoʻgʻri';
-    const parts = {};
-    let tot = 0;
-    for (const [k, v] of Object.entries(r.parts || {})) {
-      const n = Number(v);
-      if (!ids.has(k) || !kgOk(n)) return 'Retseptdagi miqdor notoʻgʻri';
-      if (n > 0) { parts[k] = n; tot += n; }
-    }
-    if (!tot) return 'Retsept boʻsh';
-    recipes.push({ from: r.from, parts });
-  }
-  recipes.sort((a, b) => a.from.localeCompare(b.from));
-  return { items, recipes };
-}
-function cleanRec(b) {
-  b = b || {};
-  if (!validDate(b.date)) return 'Sana notoʻgʻri';
-  const note = String(b.note || '').trim().slice(0, 200);
-  if (b.kind === 'mix') {
-    const kg = Number(b.kg);
-    if (!kgOk(kg) || !kg) return 'Yem miqdori notoʻgʻri';
-    return { date: b.date, kind: 'mix', kg, note };
-  }
-  if (b.kind === 'count') {
-    const qty = Number(b.qty);
-    if (!ITEM_RE.test(b.item || '')) return 'Mahsulot notoʻgʻri';
-    if (!kgOk(qty)) return 'Qoldiq notoʻgʻri';
-    return { date: b.date, kind: 'count', item: b.item, qty, note };
-  }
-  return 'Turi notoʻgʻri';
+  return { date: b.date, type: b.type, cat: b.cat, amount, qty, period, note: String(b.note || '').trim().slice(0, 200) };
 }
 
 /* ---------- Sessiya (imzolangan cookie) ---------- */
@@ -274,30 +185,6 @@ app.delete('/api/entries/:id', auth, async (req, res) => {
   if (!ID_RE.test(req.params.id)) return res.status(400).json({ error: 'ID notoʻgʻri' });
   try { res.json({ ok: await delEntry(req.params.id) }); }
   catch (err) { res.status(500).json({ error: 'Oʻchirib boʻlmadi' }); }
-});
-
-app.get('/api/stock', async (req, res) => {
-  try { res.json(await getStock()); }
-  catch (e) { res.status(500).json({ error: 'Bazaga ulanib boʻlmadi' }); }
-});
-app.put('/api/stock/cfg', auth, async (req, res) => {
-  const c = cleanCfg(req.body);
-  if (typeof c === 'string') return res.status(400).json({ error: c });
-  try { await putCfg(c); res.json(c); }
-  catch (e) { res.status(500).json({ error: 'Saqlab boʻlmadi' }); }
-});
-app.post('/api/stock/rec', auth, async (req, res) => {
-  const r = cleanRec(req.body);
-  if (typeof r === 'string') return res.status(400).json({ error: r });
-  r.id = 's' + crypto.randomBytes(6).toString('hex');
-  r.ts = Date.now();
-  try { await putRec(r); res.json(r); }
-  catch (e) { res.status(500).json({ error: 'Saqlab boʻlmadi' }); }
-});
-app.delete('/api/stock/rec/:id', auth, async (req, res) => {
-  if (!/^s[0-9a-f]{12}$/.test(req.params.id)) return res.status(400).json({ error: 'ID notoʻgʻri' });
-  try { res.json({ ok: await delRec(req.params.id) }); }
-  catch (e) { res.status(500).json({ error: 'Oʻchirib boʻlmadi' }); }
 });
 
 /* ---------- Sahifalar ---------- */

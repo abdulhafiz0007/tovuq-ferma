@@ -27,11 +27,6 @@
 .filters{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
 .filters input[type=month]{width:auto;min-height:38px;padding:6px 10px}
 tfoot td{font-weight:700;border-bottom:0;padding-top:12px}
-.tabs{margin-bottom:16px}
-.side-stack{display:grid;gap:14px;align-content:start}
-.rcp input{min-height:36px;padding:6px 8px}
-.rcp td{padding-top:5px;padding-bottom:5px}
-.mixprev{font-size:12px;color:var(--mut);margin-top:8px;line-height:1.6}
 </style>
 </head>
 <body>
@@ -55,9 +50,6 @@ tfoot td{font-weight:700;border-bottom:0;padding-top:12px}
 </section>
 
 <section id="panel" hidden>
- <div class="seg tabs" id="tabs" role="group" aria-label="Boʻlim">
-  <button data-tab="log" aria-pressed="true">Kirim-chiqim</button><button data-tab="stock" aria-pressed="false">Yem ombori</button>
- </div>
  <!-- ===== Kunlik yozuvlar ===== -->
  <div id="tab-log">
   <div class="grid g32">
@@ -72,7 +64,6 @@ tfoot td{font-weight:700;border-bottom:0;padding-top:12px}
     <div class="form-grid">
      <div><label for="fdate">Sana</label><input id="fdate" type="date" required></div>
      <div class="full-sm" id="catbox" style="grid-column:span 2"><label for="fcat">Toifa</label><select id="fcat"></select></div>
-     <div class="full-sm" id="itembox" hidden><label for="fitem">Qaysi mahsulot</label><select id="fitem"></select></div>
      <div class="qp"><label for="fqty">Miqdor (<span id="funit"></span>)</label><input id="fqty" inputmode="decimal" placeholder="masalan: 50"></div>
      <div class="qp"><label for="fprice">1 <span id="funit2"></span> narxi, soʻm</label><input id="fprice" inputmode="decimal" placeholder="masalan: 36 000"></div>
      <div class="full-sm" id="amtbox"><label for="famt">Jami summa, soʻm *</label><input id="famt" inputmode="decimal" required><div class="calc" id="fcalc"></div></div>
@@ -117,64 +108,6 @@ tfoot td{font-weight:700;border-bottom:0;padding-top:12px}
   </div>
  </div>
 
- <!-- ===== Yem ombori ===== -->
- <div id="tab-stock" hidden>
-  <div class="grid g32">
-   <div class="card">
-    <div class="ch"><h2>Ombor holati</h2><span class="meta" id="smeta"></span></div>
-    <div class="scroll"><table>
-     <thead><tr><th class="l">Mahsulot</th><th>Qoldiq, kg</th><th>Kuniga, kg</th><th>Necha kunga</th><th class="l">Holat</th></tr></thead>
-     <tbody id="srows"></tbody>
-    </table></div>
-    <p class="note" id="snote"></p>
-   </div>
-   <div class="side-stack">
-    <form class="card" id="mform" autocomplete="off">
-     <div class="ch"><h2>Yem tayyorlandi</h2></div>
-     <div class="form-grid" style="grid-template-columns:1fr 1fr">
-      <div><label for="mdate">Sana</label><input id="mdate" type="date" required></div>
-      <div><label for="mkg">Tayyor yem, kg</label><input id="mkg" inputmode="decimal" required placeholder="7 200"></div>
-     </div>
-     <div class="mixprev" id="mprev"></div>
-     <div class="actions"><button>Saqlash</button><span class="note" id="mmsg" style="margin:0" role="status"></span></div>
-    </form>
-    <form class="card" id="cform" autocomplete="off">
-     <div class="ch"><h2>Ombor sanogʻi</h2></div>
-     <div class="form-grid" style="grid-template-columns:1fr 1fr">
-      <div><label for="cdate">Sana</label><input id="cdate" type="date" required></div>
-      <div><label for="citem">Mahsulot</label><select id="citem"></select></div>
-      <div class="wide"><label for="cqty">Kun oxiridagi haqiqiy qoldiq, kg</label><input id="cqty" inputmode="decimal" required></div>
-     </div>
-     <p class="note" style="margin:8px 0 0">Tortib yoki qop sanab chiqqan raqam. Hisob shu raqamdan davom etadi.</p>
-     <div class="actions"><button>Saqlash</button><span class="note" id="cmsg" style="margin:0" role="status"></span></div>
-    </form>
-   </div>
-  </div>
-
-  <div class="grid g32">
-   <form class="card" id="rform" autocomplete="off">
-    <div class="ch"><h2>Yem retsepti</h2><span class="meta" id="rmeta"></span></div>
-    <div class="scroll"><table class="rcp">
-     <thead><tr><th class="l">Mahsulot</th><th>Partiyada, kg</th><th>Ulushi</th><th>1 kg narxi, soʻm</th><th style="width:40px"></th></tr></thead>
-     <tbody id="rrows"></tbody>
-     <tfoot><tr><td class="l"><button type="button" class="ghost" id="radd" style="min-height:32px;padding:4px 12px;font-size:13px">＋ Mahsulot</button></td><td id="rtot"></td><td></td><td id="rcost"></td><td></td></tr></tfoot>
-    </table></div>
-    <div class="actions">
-     <label for="rfrom" style="margin:0">Qaysi sanadan amal qiladi</label><input id="rfrom" type="date" required style="width:auto">
-     <button>Retseptni saqlash</button><span class="note" id="rmsg" style="margin:0" role="status"></span>
-    </div>
-    <p class="note">Retsept oʻzgarsa, yangi sanani qoʻyib saqlang — oldingi kunlar eski retsept boʻyicha hisoblanib qoladi. Narx xaridi kiritilmagan mahsulot uchun ishlatiladi; xarid boʻlsa, oxirgi xarid narxi olinadi.</p>
-   </form>
-   <div class="card">
-    <div class="ch"><h2>Ombor harakati</h2><span class="meta">oxirgi 40 ta</span></div>
-    <div class="scroll" style="max-height:520px"><table>
-     <thead><tr><th class="l">Sana</th><th class="l">Nima</th><th>kg</th><th style="width:40px"></th></tr></thead>
-     <tbody id="hrows"></tbody>
-    </table></div>
-   </div>
-  </div>
- </div>
-
 </section>
 </main>
 <script src="common.js"></script>
@@ -196,10 +129,7 @@ function numInput(el){
 /* ---------- Kunlik yozuvlar ---------- */
 const today=iso(new Date());
 let type='in',editId=null,list=[],vfilter='';
-const F={date:$('fdate'),cat:$('fcat'),qty:$('fqty'),price:$('fprice'),amt:$('famt'),note:$('fnote'),item:$('fitem')};
-let SC={cfg:{items:[],recipes:[]},recs:[]};
-const itemName=id=>(SC.cfg.items.find(i=>i.id===id)||{}).name||id;
-const itemLabel=e=>e.cat==='yem'&&e.item?' · '+itemName(e.item):'';
+const F={date:$('fdate'),cat:$('fcat'),qty:$('fqty'),price:$('fprice'),amt:$('famt'),note:$('fnote')};
 [F.qty,F.price,F.amt].forEach(numInput);
 
 function setType(t,cat){
@@ -211,20 +141,13 @@ function setType(t,cat){
 }
 const curUnit=()=>(CAT[F.cat.value]||{}).unit||'';
 // Birligi bor toifada (klitka, kg...) miqdor × narx = jami summa; birligi yoʻqda faqat summa.
-// Yem xaridida qaysi xomashyo ekani soʻraladi — kg omborga kirim boʻlib tushadi.
 function unit(){
- const u=curUnit(),yem=F.cat.value==='yem';
+ const u=curUnit();
  $('funit').textContent=$('funit2').textContent=u;
  document.querySelectorAll('.qp').forEach(e=>e.hidden=!u);
- $('itembox').hidden=!yem;$('catbox').style.gridColumn=yem?'':'span 2';
  $('amtbox').style.gridColumn=u?'':'1/-1';
  if(!u)F.qty.value=F.price.value='';
  showCalc();
-}
-function fillItems(){
- const v=F.item.value,c=$('citem').value,opt=SC.cfg.items.map(i=>`<option value="${i.id}">${esc(i.name)}</option>`).join('');
- F.item.innerHTML='<option value="">— tayyor yem / boshqa —</option>'+opt;F.item.value=v;
- $('citem').innerHTML=opt;if(c)$('citem').value=c;
 }
 function showCalc(){
  const q=num(F.qty),p=num(F.price),a=num(F.amt);
@@ -241,7 +164,7 @@ F.date.onchange=()=>{if(F.date.value){if(F.date.value.slice(0,7)!==$('vmonth').v
 function resetForm(keep){
  editId=null;$('eform').classList.remove('editing');$('ftitle').textContent='Yangi yozuv';$('fsave').textContent='Qoʻshish';$('fcancel').hidden=true;
  F.qty.value=F.price.value=F.amt.value=F.note.value='';$('fcalc').textContent='';
- if(!keep){F.date.value=today;F.item.value='';setType('in')}
+ if(!keep){F.date.value=today;setType('in')}
 }
 $('fcancel').onclick=()=>{resetForm(true);$('fmsg').textContent=''};
 
@@ -250,7 +173,7 @@ $('eform').onsubmit=async ev=>{
  const amount=num(F.amt);
  if(!(amount>0)){$('fmsg').textContent='Summani kiriting';F.amt.focus();return}
  const q=num(F.qty);
- const body={date:F.date.value,type,cat:F.cat.value,amount,qty:Number.isFinite(q)?q:null,item:F.cat.value==='yem'?F.item.value||null:null,note:F.note.value};
+ const body={date:F.date.value,type,cat:F.cat.value,amount,qty:Number.isFinite(q)?q:null,note:F.note.value};
  const b=$('fsave');b.disabled=true;$('fmsg').textContent='';
  const r=await fetch(editId?'/api/entries/'+encodeURIComponent(editId):'/api/entries',{method:editId?'PUT':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
  b.disabled=false;
@@ -265,7 +188,7 @@ $('eform').onsubmit=async ev=>{
 
 function edit(id){
  const e=list.find(x=>x.id===id);if(!e)return;
- editId=id;F.date.value=e.date;F.item.value=e.item||'';setType(e.type,e.cat);
+ editId=id;F.date.value=e.date;setType(e.type,e.cat);
  setNum(F.qty,e.qty);setNum(F.amt,e.amount);F.price.value=e.qty?fq(e.amount/e.qty):'';F.note.value=e.note||'';
  showCalc();
  $('eform').classList.add('editing');$('ftitle').textContent='Yozuvni tahrirlash';$('fsave').textContent='Saqlash';$('fcancel').hidden=false;
@@ -310,7 +233,7 @@ function render(){
    h+=`<tr class="day"><td class="l" colspan="2">${dayLabel(cur)}, ${WD[parseISO(cur).getDay()]}</td><td class="${n<0?'neg':'pos'}">${money(n)}</td><td colspan="2"></td></tr>`;
   }
   const u=(CAT[e.cat]||{}).unit||'';
-  h+=`<tr><td class="l"><span class="tag"><i class="dot d-${e.type}"></i>${esc(catName(e.cat))}<span class="meta">${esc(itemLabel(e))}</span></span></td>
+  h+=`<tr><td class="l"><span class="tag"><i class="dot d-${e.type}"></i>${esc(catName(e.cat))}</span></td>
    <td>${e.qty!=null?fq(e.qty)+' '+u:'<span class="meta">—</span>'}</td>
    <td class="${e.type==='in'?'pos':''}">${e.type==='in'?'+':'−'}${fmt(e.amount)}</td>
    <td class="l wrap">${esc(e.note||'')}</td>
@@ -333,116 +256,17 @@ document.querySelectorAll('#vtype button').forEach(b=>b.onclick=()=>{
 });
 $('csv').onclick=()=>{
  const q=s=>'"'+String(s).replace(/"/g,'""')+'"';
- const lines=[['Sana','Turi','Toifa','Mahsulot','Miqdor','Birlik','Summa','Izoh'].join(';')];
- for(const e of [...list].reverse())lines.push([e.date,e.type==='in'?'Kirim':'Chiqim',q(catName(e.cat)),q(e.item?itemName(e.item):''),e.qty??'',(CAT[e.cat]||{}).unit||'',e.amount,q(e.note||'')].join(';'));
+ const lines=[['Sana','Turi','Toifa','Miqdor','Birlik','Summa','Izoh'].join(';')];
+ for(const e of [...list].reverse())lines.push([e.date,e.type==='in'?'Kirim':'Chiqim',q(catName(e.cat)),e.qty??'',(CAT[e.cat]||{}).unit||'',e.amount,q(e.note||'')].join(';'));
  const a=document.createElement('a');
  a.href=URL.createObjectURL(new Blob(['﻿'+lines.join('\r\n')],{type:'text/csv;charset=utf-8'}));
  a.download='ferma-'+$('vmonth').value+'.csv';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
-};
-
-/* ---------- Yem ombori ---------- */
-let SE=[];
-[$('mkg'),$('cqty')].forEach(numInput);
-document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>{
- document.querySelectorAll('#tabs button').forEach(x=>x.setAttribute('aria-pressed',x===b));
- $('tab-log').hidden=b.dataset.tab!=='log';$('tab-stock').hidden=b.dataset.tab!=='stock';
- if(b.dataset.tab==='stock')loadStock();
-});
-async function api(url,method,body){
- const r=await fetch(url,{method,headers:{'Content-Type':'application/json'},body:body&&JSON.stringify(body)});
- if(r.status===401){location.reload();throw new Error('Kirish kerak')}
- const j=await r.json().catch(()=>({}));
- if(!r.ok)throw new Error(j.error||'Server javob bermadi ('+r.status+')');
- return j;
-}
-async function loadCfg(){try{SC=await getStock();fillItems()}catch(e){}}
-async function loadStock(){
- try{SC=await getStock();fillItems();SE=await getEntries(stockFrom(SC.cfg,SC.recs,today),today)}
- catch(e){$('srows').innerHTML=`<tr><td colspan="5" class="empty neg">${esc(e.message)}</td></tr>`;return}
- renderStock();
-}
-function renderStock(){
- const S=stockCalc(SC.cfg,SC.recs,SE,today);
- const shown=S.items.filter(i=>i.part||Math.abs(i.left)>0.01);
- $('smeta').textContent=S.mix7?'oxirgi 7 kunda oʻrtacha '+fmt(S.mix7)+' kg yem/kun':'';
- $('srows').innerHTML=shown.map(i=>{
-  const [c,t]=stockState(i);
-  return `<tr><td class="l">${esc(i.name)}</td><td class="${i.left<0?'neg':''}">${stockKnown(i)?fq(i.left):'—'}</td><td>${i.rate?fq(i.rate):'—'}</td><td>${stockKnown(i)&&i.days!=null?Math.max(0,Math.floor(i.days))+' kun':'—'}</td><td class="l"><span class="st ${c}">${t}</span></td></tr>`;
- }).join('');
- const noCnt=shown.filter(i=>!stockKnown(i)).length;
- $('snote').innerHTML=(noCnt?`<b>${noCnt} ta mahsulot</b> uchun hali sanoq kiritilmagan — qoldigʻi nomaʼlum. Omborni bir marta sanab, “Ombor sanogʻi”ga kiriting. `:'')+
-  `Kelgan xomashyo Kirim-chiqim boʻlimida <b>Chiqim → Yem</b> va mahsulot tanlab kiritiladi. Manfiy qoldiq xarid yoki sanoq kiritilmaganini bildiradi.`;
- // retsept
- const r=S.recipe;
- $('rmeta').textContent=dayLabel(r.from)+' dan';
- $('rfrom').value=today;
- $('rrows').innerHTML=SC.cfg.items.filter(i=>r.parts[i.id]).map(i=>rcpRow(i,r.parts[i.id])).join('');
- rcpTotals();
- // harakat tarixi
- const hist=[...SC.recs].sort((a,b)=>b.date.localeCompare(a.date)||b.ts-a.ts).slice(0,40);
- $('hrows').innerHTML=hist.length?hist.map(h=>`<tr><td class="l">${dayLabel(h.date)}</td><td class="l">${h.kind==='mix'?'Yem tayyorlandi':'Sanoq: '+esc(itemName(h.item))}</td><td>${fq(h.kind==='mix'?h.kg:h.qty)}</td><td><button class="ico del" data-hd="${h.id}" aria-label="Oʻchirish" title="Oʻchirish">✕</button></td></tr>`).join('')
-  :'<tr><td colspan="4" class="empty">Hali yozuv yoʻq</td></tr>';
- $('hrows').querySelectorAll('[data-hd]').forEach(b=>b.onclick=async()=>{
-  if(!confirm('Shu yozuv oʻchirilsinmi?'))return;
-  try{await api('/api/stock/rec/'+b.dataset.hd,'DELETE');toast('Oʻchirildi');loadStock()}catch(e){toast(e.message)}
- });
- mixPrev();
-}
-// Tayyorlanadigan yemdan har bir xomashyoga qancha ketishi
-function mixPrev(){
- const kg=num($('mkg'));
- if(!(kg>0)||!SC.cfg.recipes.length){$('mprev').textContent='';return}
- const r=recipeAt(SC.cfg,$('mdate').value||today),b=batchKg(r);
- $('mprev').innerHTML='Ombordan ketadi: '+Object.entries(r.parts).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`${esc(itemName(k))} <b>${fq(kg*v/b)}</b>`).join(' · ')+' kg';
-}
-$('mkg').addEventListener('input',mixPrev);$('mdate').onchange=mixPrev;
-$('mform').onsubmit=async ev=>{
- ev.preventDefault();$('mmsg').textContent='';
- try{const j=await api('/api/stock/rec','POST',{date:$('mdate').value,kind:'mix',kg:num($('mkg'))});toast(fmt(j.kg)+' kg yem yozildi');loadStock()}
- catch(e){$('mmsg').textContent=e.message}
-};
-$('cform').onsubmit=async ev=>{
- ev.preventDefault();$('cmsg').textContent='';
- try{await api('/api/stock/rec','POST',{date:$('cdate').value,kind:'count',item:$('citem').value,qty:num($('cqty'))});toast(itemName($('citem').value)+': sanoq saqlandi');$('cqty').value='';loadStock()}
- catch(e){$('cmsg').textContent=e.message}
-};
-// Retsept tahriri
-const rcpRow=(i,kg)=>`<tr data-id="${i.id}"><td class="l"><input class="rn" value="${esc(i.name)}" maxlength="40" aria-label="Nomi"></td><td><input class="rk" inputmode="decimal" value="${kg?fq(kg):''}" aria-label="Partiyada, kg"></td><td class="rs meta"></td><td><input class="rp" inputmode="decimal" value="${i.price?fq(i.price):''}" aria-label="1 kg narxi"></td><td><button type="button" class="ico del" aria-label="Olib tashlash" title="Olib tashlash">✕</button></td></tr>`;
-function rcpTotals(){
- const rows=[...$('rrows').querySelectorAll('tr')],kg=rows.map(t=>num(t.querySelector('.rk'))||0),tot=kg.reduce((a,b)=>a+b,0);
- let cost=0;
- rows.forEach((t,n)=>{const pc=kg[n]/tot*100;t.querySelector('.rs').textContent=tot?pc.toFixed(pc<1?2:1)+'%':'';cost+=kg[n]*(num(t.querySelector('.rp'))||0)});
- $('rtot').innerHTML=`<b>${fq(tot)} kg</b>`;
- $('rcost').innerHTML=tot?`partiya ${short(cost)}<br><small class="meta">1 kg ≈ ${fmt(cost/tot)} soʻm</small>`:'';
-}
-$('rrows').addEventListener('input',rcpTotals);
-$('rrows').addEventListener('click',e=>{if(e.target.closest('.del')){e.target.closest('tr').remove();rcpTotals()}});
-$('radd').onclick=()=>{
- $('rrows').insertAdjacentHTML('beforeend',rcpRow({id:'i'+Math.random().toString(16).slice(2,10),name:'',price:0},0));
- $('rrows').lastElementChild.querySelector('.rn').focus();
-};
-$('rform').onsubmit=async ev=>{
- ev.preventDefault();$('rmsg').textContent='';
- const rows=[...$('rrows').querySelectorAll('tr')],parts={},items=SC.cfg.items.map(i=>({...i}));
- for(const t of rows){
-  const id=t.dataset.id,name=t.querySelector('.rn').value.trim(),kg=num(t.querySelector('.rk')),pr=num(t.querySelector('.rp'));
-  if(!name){$('rmsg').textContent='Mahsulot nomini yozing';t.querySelector('.rn').focus();return}
-  if(!(kg>0)){$('rmsg').textContent=name+': miqdorni kiriting';t.querySelector('.rk').focus();return}
-  let it=items.find(i=>i.id===id);if(!it)items.push(it={id});
-  it.name=name;it.price=pr>0?pr:0;parts[id]=kg;
- }
- if(!rows.length){$('rmsg').textContent='Retsept boʻsh';return}
- const from=$('rfrom').value,recipes=SC.cfg.recipes.filter(r=>r.from!==from).concat({from,parts});
- try{SC.cfg=await api('/api/stock/cfg','PUT',{items,recipes});toast('Retsept saqlandi: '+dayLabel(from)+' dan');loadStock()}
- catch(e){$('rmsg').textContent=e.message}
 };
 
 /* ---------- Kirish ---------- */
 function show(){
  $('login').hidden=true;$('panel').hidden=false;$('out').hidden=false;
  resetForm();$('vmonth').value=today.slice(0,7);loadMonth();
- $('mdate').value=$('cdate').value=today;
- loadCfg().then(()=>list.length&&render());
 }
 async function init(){
  let a=false;try{a=(await (await fetch('/api/me',{cache:'no-store'})).json()).admin}catch(e){}

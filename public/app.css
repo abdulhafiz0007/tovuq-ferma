@@ -99,9 +99,3 @@ button.ico.del:hover{color:var(--r)}
 .tip div span{display:inline-flex;align-items:center;gap:6px;color:var(--mut)}
 
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:14px;z-index:50;box-shadow:0 6px 20px rgba(0,0,0,.2)}
-/* Ombor holati belgisi (rang + belgi + matn) */
-.st{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;padding:2px 8px;border-radius:20px;white-space:nowrap}
-.st.ok{background:var(--gbg);color:var(--g)}.st.ok::before{content:'✓'}
-.st.warn{background:color-mix(in srgb,var(--y) 18%,transparent);color:var(--ink)}.st.warn::before{content:'!';color:var(--y);font-weight:800}
-.st.bad{background:var(--rbg);color:var(--r)}.st.bad::before{content:'✕'}
-.st.none{background:var(--soft);color:var(--mut)}.st.none::before{content:'?'}

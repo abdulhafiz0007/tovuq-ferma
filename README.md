@@ -9,17 +9,12 @@ Kod oʻzgargandan keyin serverni qayta ishga tushiring (`Ctrl+C`, keyin `npm sta
 | Soʻrov | Izoh |
 |---|---|
 | `GET /api/entries?from=YYYY-MM-DD&to=YYYY-MM-DD` | Oraliqdagi yozuvlar |
-| `POST /api/entries` | Yangi yozuv (admin) – `{date, type: "in"/"out", cat, amount, qty?, item?, note?}` (`item` — yem xaridida qaysi xomashyo) |
+| `POST /api/entries` | Yangi yozuv (admin) – `{date, type: "in"/"out", cat, amount, qty?, note?}` |
 | `PUT /api/entries/:id` | Tahrirlash (admin) |
 | `DELETE /api/entries/:id` | Oʻchirish (admin) |
-| `GET /api/stock` | Yem ombori: retsept (`cfg`) va harakatlar (`recs`) |
-| `PUT /api/stock/cfg` | Retsept va mahsulotlar (admin) – `{items: [{id, name, price}], recipes: [{from, parts: {id: kg}}]}` |
-| `POST /api/stock/rec` | Yem tayyorlandi `{date, kind: "mix", kg}` yoki sanoq `{date, kind: "count", item, qty}` (admin) |
-| `DELETE /api/stock/rec/:id` | Oʻchirish (admin) |
 
 Yozuvlar Redis'da har oy uchun alohida `ferma:e:YYYY-MM` hash'da, fayl rejimida esa `data/entries.json` da saqlanadi. Toifalar roʻyxati `public/common.js` dagi `CATS` da.
 
-**Yem ombori:** har bir xomashyo qoldigʻi = oxirgi sanoq + kelgan (Chiqim → Yem, mahsulot tanlangan xaridlar) − sarflangan (tayyorlangan yem kg × shu kundagi retsept ulushi). Retsept va harakatlar Redis'da `ferma:stockcfg` / `ferma:stock`, fayl rejimida `data/stock.json` da.
 
 ## Mahalliy ishga tushirish
 ```

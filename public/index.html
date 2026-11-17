@@ -84,15 +84,14 @@ function actual(){
  }else $('hDelta').innerHTML='';
 
  const qty=(L,c)=>L.reduce((a,e)=>a+(e.cat===c&&e.qty?e.qty:0),0),amt=(L,c)=>L.reduce((a,e)=>a+(e.cat===c?e.amount:0),0);
- const kl=qty(S.L,'tuxum'),kla=amt(S.L,'tuxum'),yk=qty(S.L,'yem'),ya=amt(S.L,'yem');
+ const kl=qty(S.L,'tuxum'),kla=amt(S.L,'tuxum');
  const klDay=kl/dn;
  $('kpis').innerHTML=[
   ['<i class="dot d-in"></i>Bugungi kirim',short(T.in)+U,TL.filter(e=>e.type==='in').length+' ta yozuv'],
   ['<i class="dot d-out"></i>Bugungi chiqim',short(T.out)+U,T.fix?'shundan doimiy '+short(T.fix):'shu kun'],
   ['Oʻrtacha kunlik sof',`<span class="${net<0?'neg':'pos'}">${short(net/dn)}</span>${U}`,'shu oy'+(S.in?' · marja '+(net/S.in*100).toFixed(1)+'%':'')],
   ['Oʻrtacha kunlik chiqim',short(S.out/dn)+U,klDay?'1 klitkaga '+fmt(S.out/dn/klDay)+' soʻm':'shu oy'],
-  ['Sotilgan tuxum',fmt(kl)+'<small>klitka</small>',kl?'oʻrtacha '+fmt(kla/kl)+' soʻm/klitka':'shu oy'],
-  ['Olingan yem',fmt(yk)+'<small>kg</small>',yk?'oʻrtacha '+fmt(ya/yk)+' soʻm/kg':'shu oy']
+  ['Sotilgan tuxum',fmt(kl)+'<small>klitka</small>',kl?'oʻrtacha '+fmt(kla/kl)+' soʻm/klitka':'shu oy']
  ].map(kpi).join('');
  if(S.est.length){
   $('estnote').innerHTML=`<b>${monthName(mk)}</b> uchun ${S.est.map(c=>catName(c).toLowerCase()).join(', ')} hali kiritilmagan — hisobda oʻtgan oy summasi <b>taxminiy</b> olindi. Toʻlov kiritilgach aniq summaga almashadi.`;
