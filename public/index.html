@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ferma hisobi</title>
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css">
+<style>
+.err{background:var(--rbg);color:var(--r);border-radius:8px;padding:10px 12px;font-size:14px;margin-bottom:14px}
+.side-stack{display:grid;gap:14px;align-content:start}
+</style>
+</head>
+<body>
+<header class="top">
+ <div class="in">
+  <div class="brand"><i aria-hidden="true">◐</i><div>Tuxum fermasi hisobi<small id="date"></small></div></div>
+  <span class="meta" id="upd"></span>
+ </div>
+</header>
+<main>
+<div class="err" id="err" role="alert" hidden></div>
+
+<section class="hero">
+ <div><small id="hLbl">Shu oy sof foyda</small><div class="big" id="hNet">–</div><div style="margin-top:8px" id="hDelta"></div></div>
+ <div class="side">
+  <div><small>Oylik kirim</small><b id="hIn">–</b></div>
+  <div><small>Oylik chiqim</small><b id="hOut">–</b></div>
+  <div><small>Bugungi sof</small><b id="hToday">–</b></div>
+ </div>
+</section>
+
+<section class="grid g6" id="kpis"></section>
+<div class="hint" id="estnote" hidden style="margin:0 0 14px"></div>
+<div class="hint" id="empty" hidden style="margin-bottom:14px">Hali kirim-chiqim yozuvlari yoʻq. Admin panelda har kuni kiritib boring — bu yerda grafik va tahlil avtomatik chiqadi.</div>
+
+<section class="grid g32">
+ <div class="card">
+  <div class="ch">
+   <h2>Oxirgi 30 kun: kirim va chiqim</h2>
+   <div class="filters" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+    <div class="legend"><span><i class="dot d-in"></i>Kirim</span><span><i class="dot d-out"></i>Chiqim</span></div>
+    <button class="ghost" id="tview" style="min-height:32px;padding:4px 12px;font-size:13px">Jadval</button>
+   </div>
+  </div>
+  <div class="chart" id="chart"></div>
+  <div class="scroll" id="ctable" hidden style="max-height:320px"><table><thead><tr><th class="l">Sana</th><th>Kirim</th><th>Chiqim</th><th>Sof</th></tr></thead><tbody id="ctrows"></tbody></table></div>
+  <p class="note" id="c30"></p>
+ </div>
+ <div class="side-stack">
+  <div class="card"><div class="ch"><h2>Chiqim tarkibi</h2><span class="meta" id="mname1"></span></div><div id="outBars"></div></div>
+  <div class="card"><div class="ch"><h2>Kirim tarkibi</h2><span class="meta" id="mname2"></span></div><div id="inBars"></div></div>
+ </div>
+</section>
+
+<section class="card">
+ <div class="ch"><h2>Oxirgi yozuvlar</h2><span class="meta">eng soʻnggi 12 ta</span></div>
+ <div class="scroll"><table><thead><tr><th class="l">Sana</th><th class="l">Toifa</th><th>Miqdor</th><th>Summa</th><th class="l">Izoh</th></tr></thead><tbody id="recent"></tbody></table></div>
+</section>
+
+</main>
+<script src="common.js"></script>
+<script>
+let E=[],days30=[];
+function setDate(){const d=new Date();$('date').textContent=`${d.getDate()}-${MO[d.getMonth()]}, ${d.getFullYear()}-yil, ${WD[d.getDay()]}`}
+setDate();setInterval(setDate,60000);
+const U='<small>soʻm</small>';
+const kpi=([l,v,n])=>`<div class="card k"><div class="l">${l}</div><div class="v">${v}</div><div class="n">${n}</div></div>`;
+
+/* ---------- Haqiqiy kirim-chiqim ---------- */
+function actual(){
+ const now=new Date(),today=iso(now),mk=ym(today),dn=now.getDate(),pmk=prevYm(mk);
+ const fx=fixedCosts(E,today);
+ const S=periodStats(E,mk,dn,fx),PS=periodStats(E,pmk,Math.min(dn,daysIn(pmk)),fx);
+ const T=dayStats(E,today,fx),TL=E.filter(e=>e.date===today);
+ const net=S.in-S.out,pnet=PS.in-PS.out;
+
+ $('hLbl').textContent=`Shu oy sof foyda · ${MO[now.getMonth()]} 1–${dn}`;
+ $('hNet').textContent=money(net);
+ $('hIn').textContent=short(S.in)+' soʻm';$('hOut').textContent=short(S.out)+' soʻm';$('hToday').textContent=short(T.in-T.out)+' soʻm';
+ if(PS.L.length){
+  const d=net-pnet;
+  $('hDelta').innerHTML=`<span class="delta">${d>=0?'▲':'▼'} ${short(Math.abs(d))} soʻm</span> <small style="display:inline;opacity:.85">oʻtgan oyning shu davriga nisbatan (${short(pnet)})</small>`;
+ }else $('hDelta').innerHTML='';
+
+ const qty=(L,c)=>L.reduce((a,e)=>a+(e.cat===c&&e.qty?e.qty:0),0),amt=(L,c)=>L.reduce((a,e)=>a+(e.cat===c?e.amount:0),0);
+ const kl=qty(S.L,'tuxum'),kla=amt(S.L,'tuxum'),yk=qty(S.L,'yem'),ya=amt(S.L,'yem');
+ const klDay=kl/dn;
+ $('kpis').innerHTML=[
+  ['<i class="dot d-in"></i>Bugungi kirim',short(T.in)+U,TL.filter(e=>e.type==='in').length+' ta yozuv'],
+  ['<i class="dot d-out"></i>Bugungi chiqim',short(T.out)+U,T.fix?'shundan doimiy '+short(T.fix):'shu kun'],
+  ['Oʻrtacha kunlik sof',`<span class="${net<0?'neg':'pos'}">${short(net/dn)}</span>${U}`,'shu oy'+(S.in?' · marja '+(net/S.in*100).toFixed(1)+'%':'')],
+  ['Oʻrtacha kunlik chiqim',short(S.out/dn)+U,klDay?'1 klitkaga '+fmt(S.out/dn/klDay)+' soʻm':'shu oy'],
+  ['Sotilgan tuxum',fmt(kl)+'<small>klitka</small>',kl?'oʻrtacha '+fmt(kla/kl)+' soʻm/klitka':'shu oy'],
+  ['Olingan yem',fmt(yk)+'<small>kg</small>',yk?'oʻrtacha '+fmt(ya/yk)+' soʻm/kg':'shu oy']
+ ].map(kpi).join('');
+ if(S.est.length){
+  $('estnote').innerHTML=`<b>${monthName(mk)}</b> uchun ${S.est.map(c=>catName(c).toLowerCase()).join(', ')} hali kiritilmagan — hisobda oʻtgan oy summasi <b>taxminiy</b> olindi. Toʻlov kiritilgach aniq summaga almashadi.`;
+  $('estnote').hidden=false;
+ }else $('estnote').hidden=true;
+
+ days30=[];
+ for(let i=29;i>=0;i--)days30.push(dayStats(E,addDays(today,-i),fx));
+ dailyChart($('chart'),days30);
+ const s30i=days30.reduce((a,d)=>a+d.in,0),s30o=days30.reduce((a,d)=>a+d.out,0);
+ $('c30').innerHTML=`30 kunda: kirim <b>${short(s30i)}</b>, chiqim <b>${short(s30o)}</b>, sof <b class="${s30i-s30o<0?'neg':'pos'}">${money(s30i-s30o)}</b>.`;
+ $('ctrows').innerHTML=[...days30].reverse().map(d=>`<tr><td class="l">${dayLabel(d.date)}</td><td>${fmt(d.in)}</td><td>${fmt(d.out)}</td><td class="${d.in-d.out<0?'neg':'pos'}">${fmt(d.in-d.out)}</td></tr>`).join('');
+
+ $('mname1').textContent=$('mname2').textContent=MO[now.getMonth()]+' 1–'+dn;
+ $('outBars').innerHTML=catBars(S.outCats,'out',S.est);$('inBars').innerHTML=catBars(S.inCats,'in');
+
+ $('recent').innerHTML=E.length?E.slice(0,12).map(e=>`<tr><td class="l">${dayLabel(e.date)}</td><td class="l"><span class="tag"><i class="dot d-${e.type}"></i>${esc(catName(e.cat))}<span class="meta">${periodLabel(e)}</span></span></td><td>${e.qty!=null?fq(e.qty)+' '+((CAT[e.cat]||{}).unit||''):'—'}</td><td class="${e.type==='in'?'pos':''}">${e.type==='in'?'+':'−'}${fmt(e.amount)}</td><td class="l wrap">${esc(e.note||'')}</td></tr>`).join('')
+  :'<tr><td colspan="5" class="empty">Hali yozuv yoʻq</td></tr>';
+ $('empty').hidden=E.length>0;
+}
+$('tview').onclick=()=>{const t=$('ctable').hidden;$('ctable').hidden=!t;$('chart').hidden=t;$('tview').textContent=t?'Grafik':'Jadval'};
+let rt;addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(()=>days30.length&&dailyChart($('chart'),days30),150)});
+
+async function load(){
+ const now=new Date(),today=iso(now);
+ // 3 oy oldindan: oʻtgan oy ish haqi keyingi oyda toʻlanishi va taxminiy summa uchun
+ const from=iso(new Date(now.getFullYear(),now.getMonth()-3,1));
+ try{
+  E=await getEntries(from,today);actual();
+  $('err').hidden=true;
+  const last=Math.max(0,...E.map(x=>x.ts||0));
+  $('upd').textContent=last?'Yangilangan: '+dayLabel(iso(new Date(last)))+', '+hm(last):'';
+ }catch(err){$('err').textContent='Maʼlumotni yuklab boʻlmadi: '+err.message;$('err').hidden=false}
+}
+load();setInterval(load,60000);
+</script>
+</body>
+</html>
