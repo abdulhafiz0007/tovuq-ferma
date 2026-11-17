@@ -90,17 +90,16 @@ function actual(){
 
  const qty=(L,c)=>L.reduce((a,e)=>a+(e.cat===c&&e.qty?e.qty:0),0),amt=(L,c)=>L.reduce((a,e)=>a+(e.cat===c?e.amount:0),0);
  const kl=qty(S.L,'tuxum');
- const klDay=kl/dn,kt=qty(TL,'tuxum'),kta=amt(TL,'tuxum');
- // Tuxum berish: oxirgi kiritilgan kun va oxirgi 7 kun oʻrtachasi
+ const klDay=kl/dn,kt=qty(TL,'tuxum');
+ // Tuxum berish: oxirgi kiritilgan kun
  const LD=LAY?LAY.recs.map(layDay).filter(d=>d.hens):[],ld=LD[LD.length-1];
- const w7=LD.filter(d=>d.date>addDays(today,-7)),avg7=w7.reduce((a,d)=>a+d.eggs,0)/(w7.reduce((a,d)=>a+d.hens,0)||1)*100;
  $('kpis').innerHTML=[
-  ['<i class="dot d-in"></i>Bugungi kirim',short(T.in)+U,TL.filter(e=>e.type==='in').length+' ta yozuv','#yozuvlar'],
-  ['<i class="dot d-out"></i>Bugungi chiqim',short(T.out)+U,T.fix?'shundan doimiy '+short(T.fix):'shu kun','#yozuvlar'],
-  ['Oʻrtacha kunlik sof',`<span class="${net<0?'neg':'pos'}">${short(net/dn)}</span>${U}`,'shu oy'+(S.in?' · marja '+(net/S.in*100).toFixed(1)+'%':'')],
+  ['<i class="dot d-in"></i>Bugungi kirim',short(T.in)+U,'','#yozuvlar'],
+  ['<i class="dot d-out"></i>Bugungi chiqim',short(T.out)+U,'','#yozuvlar'],
+  ['Oʻrtacha kunlik sof',`<span class="${net<0?'neg':'pos'}">${short(net/dn)}</span>${U}`,''],
   ['Oʻrtacha kunlik chiqim',short(S.out/dn)+U,klDay?'1 klitkaga '+fmt(S.out/dn/klDay)+' soʻm':'shu oy'],
-  ['Bugun sotilgan tuxum',fmt(kt)+'<small>klitka</small>',(kt?'oʻrtacha '+fmt(kta/kt)+' soʻm/klitka · ':'')+'shu oy '+fmt(kl)+' klitka'],
-  ['Tuxum berish',ld?pctStr(ld.pct):'—',ld?`${ld.date===today?'bugun':dayLabel(ld.date)} · ${fmt(ld.eggs)} dona / ${fmt(ld.hens)} tovuq`+(w7.length>1?` · 7 kunda ${pctStr(avg7)}`:''):'hali kiritilmagan']
+  ['Bugun sotilgan tuxum',fmt(kt)+'<small>klitka</small>','shu oy '+fmt(kl)+' klitka'],
+  ['Tuxum berish',ld?pctStr(ld.pct):'—',ld?`${ld.date===today?'bugun':dayLabel(ld.date)} · ${fmt(ld.eggs)} dona`:'hali kiritilmagan']
  ].map(kpi).join('');
  if(S.est.length){
   $('estnote').innerHTML=`<b>${monthName(mk)}</b> uchun ${S.est.map(c=>catName(c).toLowerCase()).join(', ')} hali kiritilmagan — hisobda oʻtgan oy summasi <b>taxminiy</b> olindi. Toʻlov kiritilgach aniq summaga almashadi.`;
