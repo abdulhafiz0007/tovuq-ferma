@@ -33,7 +33,7 @@ h2{font-size:16px;margin:0;font-weight:700}
 .k .l{color:var(--mut);font-size:13px;display:flex;align-items:center;gap:6px}
 .k .v{font-size:22px;font-weight:700;margin-top:2px;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .k .v small{font-size:13px;font-weight:500;color:var(--mut);margin-left:4px}
-.k .n{font-size:12px;color:var(--mut)}
+.k .n{font-size:12px;color:var(--mut);min-height:18px}
 .dot{width:9px;height:9px;border-radius:3px;display:inline-block;flex:none}
 .d-in{background:var(--cin)}.d-out{background:var(--cout)}
 .pos{color:var(--g)}.neg{color:var(--r)}

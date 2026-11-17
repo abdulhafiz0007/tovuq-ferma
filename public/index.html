@@ -96,7 +96,7 @@ function actual(){
  $('kpis').innerHTML=[
   ['<i class="dot d-in"></i>Bugungi kirim',short(T.in)+U,'','#yozuvlar'],
   ['<i class="dot d-out"></i>Bugungi chiqim',short(T.out)+U,'','#yozuvlar'],
-  ['Oʻrtacha kunlik sof',`<span class="${net<0?'neg':'pos'}">${short(net/dn)}</span>${U}`,''],
+  ['Oʻrtacha kunlik sof',`<span class="${net<0?'neg':'pos'}">${short(net/dn)}</span>${U}`,'shu oy oʻrtachasi'],
   ['Oʻrtacha kunlik chiqim',short(S.out/dn)+U,klDay?'1 klitkaga '+fmt(S.out/dn/klDay)+' soʻm':'shu oy'],
   ['Bugun sotilgan tuxum',fmt(kt)+'<small>klitka</small>','shu oy '+fmt(kl)+' klitka'],
   ['Tuxum berish',ld?pctStr(ld.pct):'—',ld?`${ld.date===today?'bugun':dayLabel(ld.date)} · ${fmt(ld.eggs)} dona`:'hali kiritilmagan']
