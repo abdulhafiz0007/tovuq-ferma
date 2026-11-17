@@ -61,7 +61,7 @@
 </main>
 <script src="common.js"></script>
 <script>
-let E=[],days30=[];
+let E=[],days30=[],LAY=null;
 function setDate(){const d=new Date();$('date').textContent=`${d.getDate()}-${MO[d.getMonth()]}, ${d.getFullYear()}-yil, ${WD[d.getDay()]}`}
 setDate();setInterval(setDate,60000);
 const U='<small>soʻm</small>';
@@ -86,12 +86,16 @@ function actual(){
  const qty=(L,c)=>L.reduce((a,e)=>a+(e.cat===c&&e.qty?e.qty:0),0),amt=(L,c)=>L.reduce((a,e)=>a+(e.cat===c?e.amount:0),0);
  const kl=qty(S.L,'tuxum'),kla=amt(S.L,'tuxum');
  const klDay=kl/dn;
+ // Tuxum berish: oxirgi kiritilgan kun va oxirgi 7 kun oʻrtachasi
+ const LD=LAY?LAY.recs.map(layDay).filter(d=>d.hens):[],ld=LD[LD.length-1];
+ const w7=LD.filter(d=>d.date>addDays(today,-7)),avg7=w7.reduce((a,d)=>a+d.eggs,0)/(w7.reduce((a,d)=>a+d.hens,0)||1)*100;
  $('kpis').innerHTML=[
   ['<i class="dot d-in"></i>Bugungi kirim',short(T.in)+U,TL.filter(e=>e.type==='in').length+' ta yozuv'],
   ['<i class="dot d-out"></i>Bugungi chiqim',short(T.out)+U,T.fix?'shundan doimiy '+short(T.fix):'shu kun'],
   ['Oʻrtacha kunlik sof',`<span class="${net<0?'neg':'pos'}">${short(net/dn)}</span>${U}`,'shu oy'+(S.in?' · marja '+(net/S.in*100).toFixed(1)+'%':'')],
   ['Oʻrtacha kunlik chiqim',short(S.out/dn)+U,klDay?'1 klitkaga '+fmt(S.out/dn/klDay)+' soʻm':'shu oy'],
-  ['Sotilgan tuxum',fmt(kl)+'<small>klitka</small>',kl?'oʻrtacha '+fmt(kla/kl)+' soʻm/klitka':'shu oy']
+  ['Sotilgan tuxum',fmt(kl)+'<small>klitka</small>',kl?'oʻrtacha '+fmt(kla/kl)+' soʻm/klitka':'shu oy'],
+  ['Tuxum berish',ld?pctStr(ld.pct):'—',ld?`${ld.date===today?'bugun':dayLabel(ld.date)} · ${fmt(ld.eggs)} dona / ${fmt(ld.hens)} tovuq`+(w7.length>1?` · 7 kunda ${pctStr(avg7)}`:''):'hali kiritilmagan']
  ].map(kpi).join('');
  if(S.est.length){
   $('estnote').innerHTML=`<b>${monthName(mk)}</b> uchun ${S.est.map(c=>catName(c).toLowerCase()).join(', ')} hali kiritilmagan — hisobda oʻtgan oy summasi <b>taxminiy</b> olindi. Toʻlov kiritilgach aniq summaga almashadi.`;
@@ -120,7 +124,8 @@ async function load(){
  // 3 oy oldindan: oʻtgan oy ish haqi keyingi oyda toʻlanishi va taxminiy summa uchun
  const from=iso(new Date(now.getFullYear(),now.getMonth()-3,1));
  try{
-  E=await getEntries(from,today);actual();
+  const [e,l]=await Promise.all([getEntries(from,today),getLay(addDays(today,-30),today).catch(()=>null)]);
+  E=e;LAY=l;actual();
   $('err').hidden=true;
   const last=Math.max(0,...E.map(x=>x.ts||0));
   $('upd').textContent=last?'Yangilangan: '+dayLabel(iso(new Date(last)))+', '+hm(last):'';

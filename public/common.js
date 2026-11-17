@@ -113,6 +113,21 @@ async function getEntries(from, to) {
   return r.json();
 }
 
+/* ---------- Tuxum berish foizi ---------- */
+const SEXES = 4;
+async function getLay(from, to) {
+  const r = await fetch(`/api/lay?from=${from}&to=${to}`, { cache: 'no-store' });
+  if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || 'server javob bermadi (' + r.status + '). Serverni qayta ishga tushiring.');
+  return r.json();
+}
+// Bir kunlik yozuv: faqat tuxumi kiritilgan sexlar hisobga olinadi
+function layDay(r) {
+  let eggs = 0, hens = 0;
+  r.eggs.forEach((v, i) => { if (v != null && r.hens[i]) { eggs += v; hens += r.hens[i]; } });
+  return { date: r.date, eggs, hens, pct: hens ? eggs / hens * 100 : null };
+}
+const pctStr = p => p == null ? '—' : p.toFixed(1).replace('.', ',') + '%';
+
 /* Kunlik kirim/chiqim juft ustunli grafigi (SVG, tooltip bilan) */
 function dailyChart(box, days) {
   const W = Math.max(320, box.clientWidth), H = W > 640 ? 330 : 240, L = 52, R = 8, T = 10, B = 26;

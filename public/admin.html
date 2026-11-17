@@ -27,6 +27,8 @@
 .filters{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
 .filters input[type=month]{width:auto;min-height:38px;padding:6px 10px}
 tfoot td{font-weight:700;border-bottom:0;padding-top:12px}
+.lay input{min-height:36px;padding:6px 8px;text-align:right;max-width:150px;margin-left:auto;display:block}
+.lay td{padding-top:5px;padding-bottom:5px}
 </style>
 </head>
 <body>
@@ -86,6 +88,31 @@ tfoot td{font-weight:700;border-bottom:0;padding-top:12px}
      <div class="row"><span>Sof natija</span><b id="dnet">–</b></div>
     </div>
     <p class="note" id="dcount"></p>
+   </div>
+  </div>
+
+  <!-- ===== Tuxum yigʻimi ===== -->
+  <div class="grid g32">
+   <form class="card" id="lform2" autocomplete="off">
+    <div class="ch"><h2>Tuxum yigʻimi</h2><input id="ldate" type="date" required style="width:auto" aria-label="Sana"></div>
+    <div class="scroll"><table class="lay">
+     <thead><tr><th class="l">Sex</th><th>Tovuqlar soni</th><th>Yigʻilgan tuxum, dona</th><th>Tuxum berish</th></tr></thead>
+     <tbody id="lrows"></tbody>
+     <tfoot><tr><td class="l">Jami</td><td id="lhens"></td><td id="leggs"></td><td id="lpct"></td></tr></tfoot>
+    </table></div>
+    <div class="actions">
+     <button>Saqlash</button>
+     <button type="button" class="ghost" id="ldel" hidden>Shu kunni oʻchirish</button>
+     <span class="note" id="lmsg" style="margin:0" role="status"></span>
+    </div>
+    <p class="note">Tovuq yoʻq sexni 0 qoldiring. Tovuqlar soni oʻzgarsa (oʻlim, yangi tovuq), shu yerda yangilang — u keyingi kunlarga ham oʻtadi.</p>
+   </form>
+   <div class="card">
+    <div class="ch"><h2>Oxirgi 14 kun</h2></div>
+    <div class="scroll"><table>
+     <thead><tr><th class="l">Sana</th><th>Tuxum, dona</th><th>Foiz</th></tr></thead>
+     <tbody id="lhist"></tbody>
+    </table></div>
    </div>
   </div>
 
@@ -263,10 +290,64 @@ $('csv').onclick=()=>{
  a.download='ferma-'+$('vmonth').value+'.csv';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
 };
 
+/* ---------- Tuxum yigʻimi ---------- */
+let LY={hens:[],recs:[]};
+const LI=[...Array(SEXES)].map((_,i)=>i);
+$('lrows').innerHTML=LI.map(i=>`<tr><td class="l">${i+1}-sex</td><td><input class="lh" data-i="${i}" inputmode="numeric" aria-label="${i+1}-sex tovuqlar soni"></td><td><input class="le" data-i="${i}" inputmode="numeric" aria-label="${i+1}-sex yigʻilgan tuxum"></td><td class="lp" data-i="${i}"></td></tr>`).join('');
+const lin=c=>[...$('lrows').querySelectorAll(c)];
+lin('input').forEach(numInput);
+const intOrNull=el=>{const v=num(el);return Number.isFinite(v)?Math.round(v):null};
+function layTotals(){
+ const h=lin('.lh').map(intOrNull),e=lin('.le').map(intOrNull);
+ const d=layDay({hens:h.map(v=>v||0),eggs:e});
+ lin('.lp').forEach((td,i)=>{td.textContent=e[i]!=null&&h[i]?pctStr(e[i]/h[i]*100):''});
+ $('lhens').textContent=fmt(h.reduce((a,v)=>a+(v||0),0));
+ $('leggs').textContent=d.eggs?fmt(d.eggs)+' · '+fq(d.eggs/30)+' klitka':'';
+ $('lpct').textContent=d.hens?pctStr(d.pct):'';
+}
+$('lrows').addEventListener('input',layTotals);
+// Tanlangan kunning yozuvi boʻlsa oʻsha, boʻlmasa joriy tovuqlar soni bilan ochiladi
+async function loadLayDay(){
+ const d=$('ldate').value||today;$('lmsg').textContent='';
+ let r;try{r=await getLay(d,d)}catch(e){$('lmsg').textContent=e.message;return}
+ const rec=r.recs[0];
+ lin('.lh').forEach((el,i)=>setNum(el,(rec?rec.hens:r.hens)[i]||0));
+ lin('.le').forEach((el,i)=>setNum(el,rec?rec.eggs[i]:null));
+ $('ldel').hidden=!rec;
+ layTotals();
+}
+async function loadLayHist(){
+ try{LY=await getLay(addDays(today,-13),today)}catch(e){$('lhist').innerHTML=`<tr><td colspan="3" class="empty neg">${esc(e.message)}</td></tr>`;return}
+ const rows=LY.recs.map(layDay).filter(d=>d.hens).reverse();
+ $('lhist').innerHTML=rows.length?rows.map(d=>`<tr><td class="l">${dayLabel(d.date)}</td><td>${fmt(d.eggs)}</td><td>${pctStr(d.pct)}</td></tr>`).join('')
+  :'<tr><td colspan="3" class="empty">Hali kiritilmagan</td></tr>';
+}
+$('ldate').onchange=loadLayDay;
+$('lform2').onsubmit=async ev=>{
+ ev.preventDefault();$('lmsg').textContent='';
+ const hens=lin('.lh').map(intOrNull),eggs=lin('.le').map(intOrNull);
+ if(eggs.every(v=>v==null)){$('lmsg').textContent='Tuxum sonini kiriting';lin('.le')[2].focus();return}
+ const r=await fetch('/api/lay/'+$('ldate').value,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({hens,eggs})});
+ if(r.status===401){location.reload();return}
+ const j=await r.json().catch(()=>({}));
+ if(!r.ok){$('lmsg').textContent=j.error||'Saqlab boʻlmadi ('+r.status+')';return}
+ toast(dayLabel(j.date)+': tuxum berish '+pctStr(layDay(j).pct));
+ $('ldel').hidden=false;loadLayHist();
+};
+$('ldel').onclick=async()=>{
+ const d=$('ldate').value;
+ if(!confirm(dayLabel(d)+' kungi tuxum yigʻimi oʻchirilsinmi?'))return;
+ const r=await fetch('/api/lay/'+d,{method:'DELETE'});
+ if(r.status===401){location.reload();return}
+ if(!r.ok){toast('Oʻchirib boʻlmadi');return}
+ toast('Oʻchirildi');loadLayDay();loadLayHist();
+};
+
 /* ---------- Kirish ---------- */
 function show(){
  $('login').hidden=true;$('panel').hidden=false;$('out').hidden=false;
  resetForm();$('vmonth').value=today.slice(0,7);loadMonth();
+ $('ldate').value=today;loadLayDay();loadLayHist();
 }
 async function init(){
  let a=false;try{a=(await (await fetch('/api/me',{cache:'no-store'})).json()).admin}catch(e){}

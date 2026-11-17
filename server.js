@@ -187,6 +187,75 @@ app.delete('/api/entries/:id', auth, async (req, res) => {
   catch (err) { res.status(500).json({ error: 'Oʻchirib boʻlmadi' }); }
 });
 
+/* ---------- Tuxum yigʻimi: sexlardagi tovuqlar soni va har kuni yigʻilgan tuxum ---------- */
+// Har kungi yozuv oʻsha kundagi tovuqlar sonini ham saqlaydi — keyin son oʻzgarsa, eski foizlar buzilmaydi.
+const SEX_N = 4;
+// Boshlangʻich holat: faqat 3-sexda tovuq bor
+const DEFAULT_HENS = [0, 0, 65000, 0];
+const LFILE = path.join(path.dirname(FILE), 'lay.json');
+const readLF = () => { try { return JSON.parse(fs.readFileSync(LFILE, 'utf8')); } catch { return {}; } };
+const writeLF = d => { fs.mkdirSync(path.dirname(LFILE), { recursive: true }); fs.writeFileSync(LFILE, JSON.stringify(d)); };
+async function getLay() {
+  if (R_URL && R_TOKEN) {
+    const [s, h] = await pipeline([['GET', 'ferma:sex'], ['HGETALL', 'ferma:lay']]);
+    const recs = [];
+    for (let i = 1; i < (h || []).length; i += 2) recs.push(JSON.parse(h[i]));
+    return { hens: s ? JSON.parse(s) : DEFAULT_HENS, recs };
+  }
+  const d = readLF();
+  return { hens: d.hens || DEFAULT_HENS, recs: Object.values(d.recs || {}) };
+}
+async function putLay(r, hens) {
+  if (R_URL && R_TOKEN) {
+    const cmds = [['HSET', 'ferma:lay', r.date, JSON.stringify(r)]];
+    if (hens) cmds.push(['SET', 'ferma:sex', JSON.stringify(hens)]);
+    return pipeline(cmds);
+  }
+  const d = readLF();
+  (d.recs = d.recs || {})[r.date] = r;
+  if (hens) d.hens = hens;
+  writeLF(d);
+}
+async function delLay(date) {
+  if (R_URL && R_TOKEN) return (await redis(['HDEL', 'ferma:lay', date])) > 0;
+  const d = readLF();
+  if (!d.recs || !d.recs[date]) return false;
+  delete d.recs[date]; writeLF(d); return true;
+}
+const countArr = (a, max) => Array.isArray(a) && a.length === SEX_N &&
+  a.every(v => v === null || (Number.isInteger(v) && v >= 0 && v <= max));
+
+app.get('/api/lay', async (req, res) => {
+  const { from, to } = req.query;
+  if (!validDate(from) || !validDate(to) || from > to) return res.status(400).json({ error: 'Sana oraligʻi notoʻgʻri' });
+  try {
+    const d = await getLay();
+    res.json({ hens: d.hens, recs: d.recs.filter(r => r.date >= from && r.date <= to).sort((a, b) => a.date.localeCompare(b.date)) });
+  } catch (e) { res.status(500).json({ error: 'Bazaga ulanib boʻlmadi' }); }
+});
+// {hens: [4], eggs: [4]} — tuxum dona; null = shu sex boʻyicha kiritilmagan
+app.put('/api/lay/:date', auth, async (req, res) => {
+  const date = req.params.date, b = req.body || {};
+  if (!validDate(date)) return res.status(400).json({ error: 'Sana notoʻgʻri' });
+  if (!countArr(b.hens, 1e6)) return res.status(400).json({ error: 'Tovuqlar soni notoʻgʻri' });
+  if (!countArr(b.eggs, 1e6) || b.eggs.every(v => v === null)) return res.status(400).json({ error: 'Tuxum soni notoʻgʻri' });
+  const hens = b.hens.map(v => v || 0);
+  if (b.eggs.some((v, i) => v && !hens[i])) return res.status(400).json({ error: 'Tuxum kiritilgan sexda tovuqlar soni yoʻq' });
+  const r = { date, hens, eggs: b.eggs, ts: Date.now() };
+  try {
+    // Joriy tovuqlar soni faqat eng oxirgi sana kiritilganda yangilanadi (eski kunni tuzatish uni orqaga qaytarmaydi)
+    const d = await getLay();
+    const latest = d.recs.every(x => x.date <= date);
+    await putLay(r, latest ? hens : null);
+    res.json(r);
+  } catch (e) { res.status(500).json({ error: 'Saqlab boʻlmadi' }); }
+});
+app.delete('/api/lay/:date', auth, async (req, res) => {
+  if (!validDate(req.params.date)) return res.status(400).json({ error: 'Sana notoʻgʻri' });
+  try { res.json({ ok: await delLay(req.params.date) }); }
+  catch (e) { res.status(500).json({ error: 'Oʻchirib boʻlmadi' }); }
+});
+
 /* ---------- Sahifalar ---------- */
 app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
 app.use(express.static(path.join(__dirname, 'public')));
