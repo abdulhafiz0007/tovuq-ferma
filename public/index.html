@@ -9,6 +9,10 @@
 <style>
 .err{background:var(--rbg);color:var(--r);border-radius:8px;padding:10px 12px;font-size:14px;margin-bottom:14px}
 .side-stack{display:grid;gap:14px;align-content:start}
+html{scroll-behavior:smooth}
+a.k{color:inherit;text-decoration:none;cursor:pointer}
+a.k:hover{border-color:var(--mut)}
+#yozuvlar{scroll-margin-top:70px}
 </style>
 </head>
 <body>
@@ -40,11 +44,11 @@
    <h2>Oxirgi 30 kun: kirim va chiqim</h2>
    <div class="filters" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
     <div class="legend"><span><i class="dot d-in"></i>Kirim</span><span><i class="dot d-out"></i>Chiqim</span></div>
-    <button class="ghost" id="tview" style="min-height:32px;padding:4px 12px;font-size:13px">Jadval</button>
+    <button class="ghost" id="tview" style="min-height:32px;padding:4px 12px;font-size:13px">Grafik</button>
    </div>
   </div>
-  <div class="chart" id="chart"></div>
-  <div class="scroll" id="ctable" hidden style="max-height:320px"><table><thead><tr><th class="l">Sana</th><th>Kirim</th><th>Chiqim</th><th>Sof</th></tr></thead><tbody id="ctrows"></tbody></table></div>
+  <div class="chart" id="chart" hidden></div>
+  <div class="scroll" id="ctable" style="max-height:320px"><table><thead><tr><th class="l">Sana</th><th>Kirim</th><th>Chiqim</th><th>Sof</th></tr></thead><tbody id="ctrows"></tbody></table></div>
   <p class="note" id="c30"></p>
  </div>
  <div class="side-stack">
@@ -53,7 +57,7 @@
  </div>
 </section>
 
-<section class="card">
+<section class="card" id="yozuvlar">
  <div class="ch"><h2>Oxirgi yozuvlar</h2><span class="meta">eng soʻnggi 12 ta</span></div>
  <div class="scroll"><table><thead><tr><th class="l">Sana</th><th class="l">Toifa</th><th>Miqdor</th><th>Summa</th><th class="l">Izoh</th></tr></thead><tbody id="recent"></tbody></table></div>
 </section>
@@ -65,7 +69,8 @@ let E=[],days30=[],LAY=null;
 function setDate(){const d=new Date();$('date').textContent=`${d.getDate()}-${MO[d.getMonth()]}, ${d.getFullYear()}-yil, ${WD[d.getDay()]}`}
 setDate();setInterval(setDate,60000);
 const U='<small>soʻm</small>';
-const kpi=([l,v,n])=>`<div class="card k"><div class="l">${l}</div><div class="v">${v}</div><div class="n">${n}</div></div>`;
+// 4-element berilsa, karta shu boʻlimga olib boradigan havola boʻladi
+const kpi=([l,v,n,href])=>{const t=href?'a':'div';return `<${t} class="card k"${href?` href="${href}"`:''}><div class="l">${l}</div><div class="v">${v}</div><div class="n">${n}</div></${t}>`};
 
 /* ---------- Haqiqiy kirim-chiqim ---------- */
 function actual(){
@@ -84,17 +89,17 @@ function actual(){
  }else $('hDelta').innerHTML='';
 
  const qty=(L,c)=>L.reduce((a,e)=>a+(e.cat===c&&e.qty?e.qty:0),0),amt=(L,c)=>L.reduce((a,e)=>a+(e.cat===c?e.amount:0),0);
- const kl=qty(S.L,'tuxum'),kla=amt(S.L,'tuxum');
- const klDay=kl/dn;
+ const kl=qty(S.L,'tuxum');
+ const klDay=kl/dn,kt=qty(TL,'tuxum'),kta=amt(TL,'tuxum');
  // Tuxum berish: oxirgi kiritilgan kun va oxirgi 7 kun oʻrtachasi
  const LD=LAY?LAY.recs.map(layDay).filter(d=>d.hens):[],ld=LD[LD.length-1];
  const w7=LD.filter(d=>d.date>addDays(today,-7)),avg7=w7.reduce((a,d)=>a+d.eggs,0)/(w7.reduce((a,d)=>a+d.hens,0)||1)*100;
  $('kpis').innerHTML=[
-  ['<i class="dot d-in"></i>Bugungi kirim',short(T.in)+U,TL.filter(e=>e.type==='in').length+' ta yozuv'],
-  ['<i class="dot d-out"></i>Bugungi chiqim',short(T.out)+U,T.fix?'shundan doimiy '+short(T.fix):'shu kun'],
+  ['<i class="dot d-in"></i>Bugungi kirim',short(T.in)+U,TL.filter(e=>e.type==='in').length+' ta yozuv','#yozuvlar'],
+  ['<i class="dot d-out"></i>Bugungi chiqim',short(T.out)+U,T.fix?'shundan doimiy '+short(T.fix):'shu kun','#yozuvlar'],
   ['Oʻrtacha kunlik sof',`<span class="${net<0?'neg':'pos'}">${short(net/dn)}</span>${U}`,'shu oy'+(S.in?' · marja '+(net/S.in*100).toFixed(1)+'%':'')],
   ['Oʻrtacha kunlik chiqim',short(S.out/dn)+U,klDay?'1 klitkaga '+fmt(S.out/dn/klDay)+' soʻm':'shu oy'],
-  ['Sotilgan tuxum',fmt(kl)+'<small>klitka</small>',kl?'oʻrtacha '+fmt(kla/kl)+' soʻm/klitka':'shu oy'],
+  ['Bugun sotilgan tuxum',fmt(kt)+'<small>klitka</small>',(kt?'oʻrtacha '+fmt(kta/kt)+' soʻm/klitka · ':'')+'shu oy '+fmt(kl)+' klitka'],
   ['Tuxum berish',ld?pctStr(ld.pct):'—',ld?`${ld.date===today?'bugun':dayLabel(ld.date)} · ${fmt(ld.eggs)} dona / ${fmt(ld.hens)} tovuq`+(w7.length>1?` · 7 kunda ${pctStr(avg7)}`:''):'hali kiritilmagan']
  ].map(kpi).join('');
  if(S.est.length){
@@ -116,7 +121,8 @@ function actual(){
   :'<tr><td colspan="5" class="empty">Hali yozuv yoʻq</td></tr>';
  $('empty').hidden=E.length>0;
 }
-$('tview').onclick=()=>{const t=$('ctable').hidden;$('ctable').hidden=!t;$('chart').hidden=t;$('tview').textContent=t?'Grafik':'Jadval'};
+// Grafik yashirin turganda kengligi 0 boʻladi — koʻrsatilganda qayta chiziladi
+$('tview').onclick=()=>{const t=$('ctable').hidden;$('ctable').hidden=!t;$('chart').hidden=t;$('tview').textContent=t?'Grafik':'Jadval';if(!t&&days30.length)dailyChart($('chart'),days30)};
 let rt;addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(()=>days30.length&&dailyChart($('chart'),days30),150)});
 
 async function load(){
