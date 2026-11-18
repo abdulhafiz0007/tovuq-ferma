@@ -233,7 +233,7 @@ app.get('/api/lay', async (req, res) => {
     res.json({ hens: d.hens, recs: d.recs.filter(r => r.date >= from && r.date <= to).sort((a, b) => a.date.localeCompare(b.date)) });
   } catch (e) { res.status(500).json({ error: 'Bazaga ulanib boʻlmadi' }); }
 });
-// {hens: [4], eggs: [4]} — tuxum dona; null = shu sex boʻyicha kiritilmagan
+// {hens: [4], eggs: [4], dead?: [4], broken?: [4]} — dona; null = shu sex boʻyicha kiritilmagan
 app.put('/api/lay/:date', auth, async (req, res) => {
   const date = req.params.date, b = req.body || {};
   if (!validDate(date)) return res.status(400).json({ error: 'Sana notoʻgʻri' });
@@ -241,7 +241,11 @@ app.put('/api/lay/:date', auth, async (req, res) => {
   if (!countArr(b.eggs, 1e6) || b.eggs.every(v => v === null)) return res.status(400).json({ error: 'Tuxum soni notoʻgʻri' });
   const hens = b.hens.map(v => v || 0);
   if (b.eggs.some((v, i) => v && !hens[i])) return res.status(400).json({ error: 'Tuxum kiritilgan sexda tovuqlar soni yoʻq' });
+  // Ixtiyoriy: padej (oʻlgan tovuq) va siniq tuxum, sexlar boʻyicha
+  for (const k of ['dead', 'broken']) if (b[k] != null && !countArr(b[k], 1e6)) return res.status(400).json({ error: (k === 'dead' ? 'Padej' : 'Siniq tuxum') + ' soni notoʻgʻri' });
   const r = { date, hens, eggs: b.eggs, ts: Date.now() };
+  if (b.dead && b.dead.some(v => v != null)) r.dead = b.dead;
+  if (b.broken && b.broken.some(v => v != null)) r.broken = b.broken;
   try {
     // Joriy tovuqlar soni faqat eng oxirgi sana kiritilganda yangilanadi (eski kunni tuzatish uni orqaga qaytarmaydi)
     const d = await getLay();
