@@ -292,6 +292,53 @@ app.delete('/api/lay/:date', auth, async (req, res) => {
   catch (e) { res.status(500).json({ error: 'Oʻchirib boʻlmadi' }); }
 });
 
+/* ---------- Dashboardga kirishlar: sana, qurilma, shahar ---------- */
+const VFILE = path.join(path.dirname(FILE), 'visits.json');
+const VMAX = 1000;
+// Havola oldindan koʻrinishi (Telegram, WhatsApp) va botlar kirish hisoblanmaydi
+const BOT_RE = /bot|crawl|spider|preview|facebookexternalhit|whatsapp|telegram(bot)?\b|slurp|curl|wget|python|node-fetch|headless/i;
+function parseUA(ua) {
+  const t = ua || '';
+  let dev = 'Kompyuter', os = '';
+  if (/iPhone/.test(t)) { dev = 'Telefon'; os = 'iPhone'; }
+  else if (/iPad/.test(t) || (/Macintosh/.test(t) && /Mobile/.test(t))) { dev = 'Planshet'; os = 'iPad'; }
+  else if (/Android/.test(t)) { dev = /Mobile/.test(t) ? 'Telefon' : 'Planshet'; os = 'Android'; const m = t.match(/;\s*([^;)]+?)\s+Build\//); if (m && !/^(K|wv)$/.test(m[1])) os += ' · ' + m[1].trim().slice(0, 30); }
+  else if (/Windows/.test(t)) os = 'Windows';
+  else if (/Mac OS X|Macintosh/.test(t)) os = 'Mac';
+  else if (/Linux/.test(t)) os = 'Linux';
+  const br = /YaBrowser/.test(t) ? 'Yandex' : /EdgA?\//.test(t) ? 'Edge' : /OPR\/|Opera/.test(t) ? 'Opera' : /SamsungBrowser/.test(t) ? 'Samsung' :
+    /Firefox|FxiOS/.test(t) ? 'Firefox' : /CriOS|Chrome\//.test(t) ? 'Chrome' : /Safari\//.test(t) ? 'Safari' : '';
+  return { dev, os, br };
+}
+const hdr = (req, n) => { const v = req.headers[n]; try { return v ? decodeURIComponent(String(v)) : ''; } catch { return String(v || ''); } };
+app.post('/api/visit', async (req, res) => {
+  const ua = String(req.headers['user-agent'] || '');
+  if (BOT_RE.test(ua)) return res.json({ ok: true });
+  const v = {
+    ts: Date.now(), ...parseUA(ua),
+    city: hdr(req, 'x-vercel-ip-city').slice(0, 60),
+    region: hdr(req, 'x-vercel-ip-country-region').slice(0, 10),
+    country: hdr(req, 'x-vercel-ip-country').slice(0, 4),
+    admin: okToken(getCookie(req, 'fa')) || undefined
+  };
+  try {
+    if (R_URL && R_TOKEN) await pipeline([['LPUSH', 'ferma:visits', JSON.stringify(v)], ['LTRIM', 'ferma:visits', 0, VMAX - 1]]);
+    else {
+      let a = []; try { a = JSON.parse(fs.readFileSync(VFILE, 'utf8')); } catch {}
+      a.unshift(v); fs.mkdirSync(path.dirname(VFILE), { recursive: true }); fs.writeFileSync(VFILE, JSON.stringify(a.slice(0, VMAX)));
+    }
+    res.json({ ok: true });
+  } catch (e) { res.status(500).json({ error: 'Saqlab boʻlmadi' }); }
+});
+app.get('/api/visits', auth, async (req, res) => {
+  try {
+    let a;
+    if (R_URL && R_TOKEN) a = ((await redis(['LRANGE', 'ferma:visits', 0, VMAX - 1])) || []).map(x => JSON.parse(x));
+    else { try { a = JSON.parse(fs.readFileSync(VFILE, 'utf8')); } catch { a = []; } }
+    res.json(a);
+  } catch (e) { res.status(500).json({ error: 'Bazaga ulanib boʻlmadi' }); }
+});
+
 /* ---------- Sahifalar ---------- */
 app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
 app.use(express.static(path.join(__dirname, 'public')));

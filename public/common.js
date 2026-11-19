@@ -130,7 +130,7 @@ const pctStr = p => p == null ? '—' : p.toFixed(1).replace('.', ',') + '%';
 
 /* Kunlik kirim/chiqim juft ustunli grafigi (SVG, tooltip bilan) */
 function dailyChart(box, days) {
-  const W = Math.max(320, box.clientWidth), H = W > 640 ? 330 : 240, L = 52, R = 8, T = 10, B = 26;
+  const W = Math.max(280, box.clientWidth), H = W > 640 ? 330 : 240, L = 52, R = 8, T = 10, B = 26;
   const max = Math.max(1, ...days.map(d => Math.max(d.in, d.out)));
   const step = niceStep(max / 4), top = Math.ceil(max / step) * step;
   const y = v => T + (H - T - B) * (1 - v / top);

@@ -135,6 +135,20 @@ tfoot td{font-weight:700;border-bottom:0;padding-top:12px}
   </div>
  </div>
 
+ <!-- ===== Dashboardga kirishlar ===== -->
+ <div class="card" style="margin-top:14px">
+  <div class="ch">
+   <h2>Dashboardga kirishlar</h2>
+   <label style="display:inline-flex;align-items:center;gap:6px;margin:0;font-size:13px"><input type="checkbox" id="vmine" style="width:auto;min-height:0"> Oʻzimning kirishlarimni ham koʻrsat</label>
+  </div>
+  <div class="grid g6" id="vsum" style="margin-bottom:6px"></div>
+  <div class="scroll" style="max-height:420px"><table>
+   <thead><tr><th class="l">Sana va vaqt</th><th class="l">Qurilma</th><th class="l">Shahar</th></tr></thead>
+   <tbody id="vrows"></tbody>
+  </table></div>
+  <p class="note">Oxirgi 1000 ta kirish saqlanadi. Shahar internet manzili boʻyicha taxminan aniqlanadi.</p>
+ </div>
+
 </section>
 </main>
 <script src="common.js"></script>
@@ -347,11 +361,33 @@ $('ldel').onclick=async()=>{
  toast('Oʻchirildi');loadLayDay();loadLayHist();
 };
 
+/* ---------- Dashboardga kirishlar ---------- */
+let VIS=[];
+async function loadVisits(){
+ try{const r=await fetch('/api/visits',{cache:'no-store'});if(!r.ok)throw new Error(r.status);VIS=await r.json()}
+ catch(e){$('vrows').innerHTML='<tr><td colspan="3" class="empty neg">Yuklab boʻlmadi</td></tr>';return}
+ showVisits();
+}
+function showVisits(){
+ const L=$('vmine').checked?VIS:VIS.filter(v=>!v.admin),t=today,w=addDays(today,-6);
+ const day=v=>iso(new Date(v.ts));
+ const k=(l,v)=>`<div class="card k"><div class="l">${l}</div><div class="v">${v}</div></div>`;
+ $('vsum').innerHTML=k('Bugun',fmt(L.filter(v=>day(v)===t).length))+k('Oxirgi 7 kun',fmt(L.filter(v=>day(v)>=w).length))
+  +k('Oxirgi kirish',L[0]?(day(L[0])===t?'bugun':dayLabel(day(L[0])))+', '+hm(L[0].ts):'—');
+ $('vrows').innerHTML=L.length?L.slice(0,300).map(v=>{
+  const dev=[v.dev,v.os,v.br].filter(Boolean).join(' · ');
+  const place=[v.city,v.country&&v.country!=='UZ'?v.country:''].filter(Boolean).join(', ')||'—';
+  return `<tr><td class="l">${dayLabel(day(v))}, ${hm(v.ts)}</td><td class="l">${esc(dev)}${v.admin?' <span class="meta">(siz)</span>':''}</td><td class="l">${esc(place)}</td></tr>`;
+ }).join(''):'<tr><td colspan="3" class="empty">Hali kirish yoʻq</td></tr>';
+}
+$('vmine').onchange=showVisits;
+
 /* ---------- Kirish ---------- */
 function show(){
  $('login').hidden=true;$('panel').hidden=false;$('out').hidden=false;
  resetForm();$('vmonth').value=today.slice(0,7);loadMonth();
  $('ldate').value=today;loadLayDay();loadLayHist();
+ loadVisits();
 }
 async function init(){
  let a=false;try{a=(await (await fetch('/api/me',{cache:'no-store'})).json()).admin}catch(e){}

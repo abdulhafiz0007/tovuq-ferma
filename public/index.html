@@ -3,141 +3,346 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#2E6B4F">
 <title>Ferma hisobi</title>
 <link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="app.css">
 <style>
-.err{background:var(--rbg);color:var(--r);border-radius:8px;padding:10px 12px;font-size:14px;margin-bottom:14px}
-.side-stack{display:grid;gap:14px;align-content:start}
-html{scroll-behavior:smooth}
-a.k{color:inherit;text-decoration:none;cursor:pointer}
-a.k:hover{border-color:var(--mut)}
-#yozuvlar{scroll-margin-top:70px}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+main{padding-top:18px}
+.err{background:var(--rbg);color:var(--r);border-radius:10px;padding:10px 12px;font-size:14px;margin-bottom:14px}
+
+/* Yuqori panel */
+.top .in{padding:10px 16px}
+.brand i{width:34px;height:34px;border-radius:10px;font-size:17px}
+.live{display:inline-flex;align-items:center;gap:7px;font-size:12px;color:var(--mut);background:var(--card);border:1px solid var(--line);border-radius:20px;padding:4px 10px;white-space:nowrap}
+.live::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--cin);box-shadow:0 0 0 3px color-mix(in srgb,var(--cin) 25%,transparent)}
+.live:empty{display:none}
+
+/* Hero */
+.hero{background:linear-gradient(135deg,var(--hero),color-mix(in srgb,var(--hero) 72%,#0b1f16));border-radius:18px;padding:22px 24px;gap:18px 32px;align-items:stretch}
+.hero .main{min-width:0}
+.hero .big{font-size:clamp(30px,7.5vw,50px)}
+.hero .side{display:grid;grid-template-columns:repeat(3,auto);gap:0;align-self:flex-end;background:rgba(255,255,255,.1);border-radius:12px;padding:12px 4px}
+.hero .side>div{padding:0 18px;border-left:1px solid rgba(255,255,255,.16)}
+.hero .side>div:first-child{border-left:0}
+.hero .side b{font-size:19px;white-space:nowrap}
+.hero .cmp{margin-top:10px;display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center}
+.hero .cmp small{display:inline;margin:0}
+
+/* KPI kartalar */
+.kpis{display:grid;gap:12px;margin-bottom:14px;grid-template-columns:repeat(6,minmax(0,1fr))}
+@media (max-width:1100px){.kpis{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.k{display:flex;flex-direction:column;justify-content:space-between;gap:6px;padding:14px 16px;height:100%;min-height:92px}
+.k .l{white-space:nowrap;overflow:hidden;min-width:0}
+.k .v{font-size:clamp(19px,2.2vw,22px)}
+a.k,.k[role=button]{color:inherit;text-decoration:none;cursor:pointer;transition:border-color .15s,transform .15s}
+a.k:hover,.k[role=button]:hover{border-color:var(--mut)}
+.k[role=button]:active{transform:scale(.98)}
+.k .go{margin-left:auto;color:var(--mut);font-size:15px;line-height:1}
+
+/* Statistik plitkalar */
+.tiles{display:grid;gap:10px;grid-template-columns:repeat(3,minmax(0,1fr));margin-bottom:12px}
+.tile{background:var(--soft);border-radius:10px;padding:11px 13px;min-width:0}
+.tile span{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--mut)}
+.tile b{display:block;font-size:20px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.tile b small{font-size:12px;font-weight:500;color:var(--mut);margin-left:4px}
+.tile.hl{background:var(--gbg)}
+.tile.hl b{color:var(--g)}
+.tile.bad b{color:var(--r)}
+
+/* 30 kun: bosilganda ochiladi */
+details.card{padding:0;margin-bottom:14px}
+details .note{margin:4px 0 0;font-size:14px}
+details summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 18px;font-weight:700;font-size:16px;border-radius:12px}
+details summary::-webkit-details-marker{display:none}
+details summary:hover{background:var(--soft)}
+details#d30{border-color:color-mix(in srgb,var(--g) 45%,var(--line))}
+details summary .chev{display:inline-flex;align-items:center;gap:6px;background:var(--btn);color:#fff;font-size:14px;font-weight:600;padding:9px 16px;border-radius:22px;flex:none;white-space:nowrap;box-shadow:0 2px 10px color-mix(in srgb,var(--btn) 40%,transparent);transition:filter .15s,transform .15s}
+details summary .chev::before{content:'Koʻrish ▾'}
+details[open] summary .chev::before{content:'Yopish ▴'}
+details[open] summary .chev{background:var(--soft);color:var(--ink);box-shadow:none}
+details summary:hover .chev{filter:brightness(1.12)}
+details summary:active .chev{transform:scale(.96)}
+details[open] summary{border-radius:12px 12px 0 0;border-bottom:1px solid var(--line)}
+.dbody{padding:4px 18px 16px}
+
+/* Jadval */
+#ctrows tr{cursor:pointer}
+#ctrows tr:hover td,#ctrows tr:focus-visible td{background:var(--soft)}
+#ctrows tr:focus-visible{outline:0}
+.md-s{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:14px 0 2px;padding:8px 12px;background:var(--soft);border-radius:8px;font-size:14px}
+.md-s span{display:inline-flex;align-items:center;gap:7px;font-weight:600}
+.md-s b{font-variant-numeric:tabular-nums}
+.s{display:none}
+#ctable{max-height:360px}
+#ctable thead th{position:sticky;top:0;background:var(--card);z-index:1}
+
+/* Tuxum yigʻimi: kun tanlash */
+.daypick{display:flex;align-items:center;gap:6px}
+.daypick select{width:auto;min-height:36px;padding:6px 10px;font-weight:600}
+.daypick button{min-height:36px;width:36px;padding:0;justify-content:center;font-size:18px}
+.lnote{font-size:13px;color:var(--mut);margin:-4px 0 12px}
+#layCard{scroll-margin-top:70px}
+
+/* Modal */
+dialog{border:0;padding:0;border-radius:16px;background:var(--card);color:var(--ink);width:min(480px,calc(100% - 32px));max-height:min(640px,calc(100dvh - 48px));box-shadow:0 20px 60px rgba(0,0,0,.35)}
+dialog::backdrop{background:rgba(10,20,15,.55);backdrop-filter:blur(2px)}
+.md{display:flex;flex-direction:column;max-height:inherit}
+.md-h{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:18px 20px 12px;border-bottom:1px solid var(--line)}
+.md-h small{display:block;font-size:13px;color:var(--mut)}
+.md-h .tot{font-size:28px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.15;margin-top:2px}
+.md-x{background:var(--soft);color:var(--ink);width:36px;height:36px;min-height:36px;padding:0;justify-content:center;border-radius:50%;font-size:20px;flex:none}
+.md-b{overflow-y:auto;padding:4px 20px;outline:0}
+.md-r{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 14px;padding:12px 0;border-bottom:1px solid var(--line)}
+.md-r:last-child{border-bottom:0}
+.md-r b{font-weight:600}
+.md-r span{grid-column:1;font-size:13px;color:var(--mut)}
+.md-r .a{grid-row:1/3;grid-column:2;align-self:center;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.md-f{display:flex;justify-content:space-between;gap:12px;padding:14px 20px calc(14px + env(safe-area-inset-bottom,0px));background:var(--soft);border-radius:0 0 16px 16px;font-size:14px}
+.md-f b{font-variant-numeric:tabular-nums}
+
+@media (max-width:860px){
+ .g32{grid-template-columns:minmax(0,1fr)}
+ .hero .side{grid-template-columns:repeat(3,minmax(0,1fr));width:100%}
+ .hero .side>div{padding:0 12px}
+}
+@media (max-width:600px){
+ main{padding:12px 12px 40px}
+ .top .in{padding:8px 12px}
+ .brand{font-size:15px}
+ .hero{padding:18px 16px;border-radius:16px;margin-bottom:12px}
+ .hero .side{padding:10px 0}
+ .hero .side>div{padding:0 10px}
+ .hero .side small{font-size:11px}
+ .hero .side b{font-size:15px}
+ .kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:12px}
+ .k{padding:12px 13px}
+ .k .l{font-size:12px}
+ .grid{gap:12px;margin-bottom:12px}
+ .card{padding:14px;border-radius:14px}
+ details.card{padding:0}
+ details summary{padding:14px;font-size:15px}
+ .dbody{padding:4px 14px 14px}
+ .tiles{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .tiles .wide{grid-column:1/-1}
+ .tile b{font-size:17px}
+ .f-full{display:none}.s{display:inline}
+ table{font-size:13px}
+ th,td{padding:7px 6px}
+ /* Telefonda modal pastdan chiqadi */
+ dialog{width:100%;max-width:100%;margin:auto 0 0;border-radius:18px 18px 0 0;max-height:85dvh}
+ .md-f{border-radius:0}
+}
+@media (max-width:360px){
+ .hero .side{grid-template-columns:1fr;gap:8px;padding:12px}
+ .hero .side>div{border-left:0;padding:0;display:flex;justify-content:space-between;align-items:baseline}
+}
 </style>
 </head>
 <body>
 <header class="top">
  <div class="in">
   <div class="brand"><i aria-hidden="true">◐</i><div>Tovuq fermasi hisobi<small id="date"></small></div></div>
-  <span class="meta" id="upd"></span>
+  <span class="live" id="upd"></span>
  </div>
 </header>
 <main>
 <div class="err" id="err" role="alert" hidden></div>
 
 <section class="hero">
- <div><small id="hLbl">Shu oy sof foyda</small><div class="big" id="hNet">–</div><div style="margin-top:8px" id="hDelta"></div></div>
+ <div class="main"><small id="hLbl">Shu oy sof foyda</small><div class="big" id="hNet">–</div><div class="cmp" id="hDelta"></div></div>
  <div class="side">
   <div><small>Oylik kirim</small><b id="hIn">–</b></div>
   <div><small>Oylik chiqim</small><b id="hOut">–</b></div>
-  
-  <div><small>Bugungi sof foyda</small><b id="hToday">–</b></div>
+  <div><small>Bugungi sof </small><b id="hToday">–</b></div>
  </div>
 </section>
 
-<section class="grid g6" id="kpis"></section>
+<section class="kpis" id="kpis"></section>
 <div class="hint" id="estnote" hidden style="margin:0 0 14px"></div>
-<div class="hint" id="empty" hidden style="margin-bottom:14px">Hali kirim-chiqim yozuvlari yoʻq. Admin panelda har kuni kiritib boring — bu yerda grafik va tahlil avtomatik chiqadi.</div>
+<div class="hint" id="empty" hidden style="margin-bottom:14px">Hali kirim-chiqim yozuvlari yoʻq. Admin panelda har kuni kiritib boring — bu yerda tahlil avtomatik chiqadi.</div>
 
-<section class="grid g32">
- <div class="card">
-  <div class="ch">
-   <h2>Oxirgi 30 kun: kirim va chiqim</h2>
-   <div class="filters" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
-    <div class="legend"><span><i class="dot d-in"></i>Kirim</span><span><i class="dot d-out"></i>Chiqim</span></div>
-    <button class="ghost" id="tview" style="min-height:32px;padding:4px 12px;font-size:13px">Grafik</button>
-   </div>
+
+<section class="grid g2">
+ <div class="card"><div class="ch"><h2>Chiqim tarkibi</h2><span class="meta" id="mname1"></span></div><div id="outBars"></div></div>
+ <div class="card"><div class="ch"><h2>Kirim tarkibi</h2><span class="meta" id="mname2"></span></div><div id="inBars"></div></div>
+</section>
+
+<section class="card" id="layCard" style="margin-bottom:14px">
+ <div class="ch">
+  <h2>Tovuqlar va tuxum yigʻimi</h2>
+  <div class="daypick">
+   <button class="ghost" id="lprev" aria-label="Oldingi kun">‹</button>
+   <select id="lday" aria-label="Kunni tanlash"></select>
+   <button class="ghost" id="lnext" aria-label="Keyingi kun">›</button>
   </div>
-  <div class="chart" id="chart" hidden></div>
-  <div class="scroll" id="ctable" style="max-height:320px"><table><thead><tr><th class="l">Sana</th><th>Kirim</th><th>Chiqim</th><th>Sof</th></tr></thead><tbody id="ctrows"></tbody></table></div>
-  <p class="note" id="c30"></p>
  </div>
- <div class="side-stack">
-  <div class="card"><div class="ch"><h2>Chiqim tarkibi</h2><span class="meta" id="mname1"></span></div><div id="outBars"></div></div>
-  <div class="card"><div class="ch"><h2>Kirim tarkibi</h2><span class="meta" id="mname2"></span></div><div id="inBars"></div></div>
- </div>
+ <p class="lnote" id="lnote" hidden></p>
+ <div class="tiles" id="ltiles" style="margin-bottom:0"><div class="empty wide">Yuklanmoqda…</div></div>
 </section>
 
-<section class="card" id="yozuvlar">
- <div class="ch"><h2>Oxirgi yozuvlar</h2><span class="meta">eng soʻnggi 12 ta</span></div>
- <div class="scroll"><table><thead><tr><th class="l">Sana</th><th class="l">Toifa</th><th>Miqdor</th><th>Summa</th><th class="l">Izoh</th></tr></thead><tbody id="recent"></tbody></table></div>
-</section>
-
+<details class="card" id="d30">
+ <summary><div><div>Oxirgi 30 kunda kirim va chiqimni koʻrish</div><p class="note" id="c30" style="font-weight:400"></p></div><span class="chev" aria-hidden="true"></span></summary>
+ <div class="dbody">
+  <p class="note" style="margin:8px 0 6px">Kunni bossangiz, oʻsha kunning kirim va chiqimi batafsil chiqadi</p>
+  <div class="scroll" id="ctable"><table><thead><tr><th class="l">Sana</th><th>Kirim</th><th>Chiqim</th><th>Sof foyda</th></tr></thead><tbody id="ctrows"></tbody></table></div>
+ </div>
+</details>
 </main>
+
+<dialog id="dlg" aria-labelledby="dlgT">
+ <div class="md">
+  <div class="md-h"><div><small id="dlgT"></small><div class="tot" id="dlgTot"></div></div><button class="md-x" id="dlgX" aria-label="Yopish">×</button></div>
+  <div class="md-b" id="dlgB" tabindex="-1" autofocus></div>
+  <div class="md-f" id="dlgF"></div>
+ </div>
+</dialog>
+
 <script src="common.js"></script>
 <script>
-let E=[],days30=[],LAY=null;
-function setDate(){const d=new Date();$('date').textContent=`${d.getDate()}-${MO[d.getMonth()]}, ${d.getFullYear()}-yil, ${WD[d.getDay()]}`}
+let E=[],LAY=null,FX=null;
+function setDate(){const d=new Date();$('date').textContent=`${d.getDate()}-${MO[d.getMonth()]}, ${WD[d.getDay()]}`}
 setDate();setInterval(setDate,60000);
 const U='<small>soʻm</small>';
-// 4-element berilsa, karta shu boʻlimga olib boradigan havola boʻladi
-const kpi=([l,v,n,href])=>{const t=href?'a':'div';return `<${t} class="card k"${href?` href="${href}"`:''}><div class="l">${l}</div><div class="v">${v}</div><div class="n">${n}</div></${t}>`};
+const kpi=([l,v,act])=>{
+ const link=act&&act[0]==='#',t=link?'a':'div';
+ const attr=!act?'':link?` href="${act}"`:` role="button" tabindex="0" data-dlg="${act}"`;
+ return `<${t} class="card k"${attr}><div class="l">${l}${act&&!link?'<span class="go" aria-hidden="true">›</span>':''}</div><div class="v">${v}</div></${t}>`;
+};
+// Keng ekranda toʻliq son, telefonda qisqa (mln)
+const dual=n=>`<span class="f-full">${fmt(n)}</span><span class="s">${short(n)}</span>`;
+const tile=(l,v,cls='')=>`<div class="tile ${cls}"><span>${l}</span><b>${v}</b></div>`;
+const dayFull=s=>dayLabel(s)+', '+WD[parseISO(s).getDay()];
 
-/* ---------- Haqiqiy kirim-chiqim ---------- */
+/* ---------- Kirim-chiqim ---------- */
 function actual(){
  const now=new Date(),today=iso(now),mk=ym(today),dn=now.getDate(),pmk=prevYm(mk);
  const fx=fixedCosts(E,today);
  const S=periodStats(E,mk,dn,fx),PS=periodStats(E,pmk,Math.min(dn,daysIn(pmk)),fx);
  const T=dayStats(E,today,fx),TL=E.filter(e=>e.date===today);
  const net=S.in-S.out,pnet=PS.in-PS.out;
+ FX=fx;
 
  $('hLbl').textContent=`Shu oy sof foyda · ${MO[now.getMonth()]} 1–${dn}`;
  $('hNet').textContent=money(net);
- $('hIn').textContent=short(S.in)+' soʻm';$('hOut').textContent=short(S.out)+' soʻm';$('hToday').textContent=short(T.in-T.out)+' soʻm';
+ $('hIn').textContent=short(S.in);$('hOut').textContent=short(S.out);$('hToday').textContent=short(T.in-T.out);
  if(PS.L.length){
   const d=net-pnet;
-  $('hDelta').innerHTML=`<span class="delta">${d>=0?'▲':'▼'} ${short(Math.abs(d))} soʻm</span> <small style="display:inline;opacity:.85">oʻtgan oyning shu davriga nisbatan (${short(pnet)})</small>`;
+  $('hDelta').innerHTML=`<span class="delta">${d>=0?'▲':'▼'} ${short(Math.abs(d))} soʻm</span><small style="opacity:.85">oʻtgan oyning shu davriga nisbatan (${short(pnet)})</small>`;
  }else $('hDelta').innerHTML='';
 
- const qty=(L,c)=>L.reduce((a,e)=>a+(e.cat===c&&e.qty?e.qty:0),0),amt=(L,c)=>L.reduce((a,e)=>a+(e.cat===c?e.amount:0),0);
- const kl=qty(S.L,'tuxum');
- const klDay=kl/dn,kt=qty(TL,'tuxum');
- // Tuxum berish: oxirgi kiritilgan kun
- const LD=LAY?LAY.recs.map(layDay).filter(d=>d.hens):[],ld=LD[LD.length-1];
+ const kt=TL.reduce((a,e)=>a+(e.cat==='tuxum'&&e.qty?e.qty:0),0);
+ const ld=layDays().pop();
  $('kpis').innerHTML=[
-  ['<i class="dot d-in"></i>Bugungi kirim',short(T.in)+U,'','#yozuvlar'],
-  ['<i class="dot d-out"></i>Bugungi chiqim',short(T.out)+U,'','#yozuvlar'],
-  ['Oʻrtacha kunlik sof',`<span class="${net<0?'neg':'pos'}">${short(net/dn)}</span>${U}`,'shu oy oʻrtachasi'],
-  ['Oʻrtacha kunlik chiqim',short(S.out/dn)+U,klDay?'1 klitkaga '+fmt(S.out/dn/klDay)+' soʻm':'shu oy'],
-  ['Bugun sotilgan tuxum',fmt(kt)+'<small>klitka</small>','shu oy '+fmt(kl)+' klitka'],
-  ['Tuxum berish',ld?pctStr(ld.pct):'—',ld?`${ld.date===today?'bugun':dayLabel(ld.date)} · ${fmt(ld.eggs)} dona`:'hali kiritilmagan']
+  ['<i class="dot d-in"></i>Bugungi kirim',short(T.in)+U,'in'],
+  ['<i class="dot d-out"></i>Bugungi chiqim',short(T.out)+U,'out'],
+  ['Oʻrtacha kunlik sof',`<span class="${net<0?'neg':'pos'}">${short(net/dn)}</span>${U}`],
+  ['Oʻrtacha kunlik chiqim',short(S.out/dn)+U],
+  ['Bugun sotilgan tuxum',fmt(kt)+'<small>klitka</small>'],
+  ['Tuxum berish',ld?pctStr(ld.pct):'—','#layCard']
  ].map(kpi).join('');
  if(S.est.length){
   $('estnote').innerHTML=`<b>${monthName(mk)}</b> uchun ${S.est.map(c=>catName(c).toLowerCase()).join(', ')} hali kiritilmagan — hisobda oʻtgan oy summasi <b>taxminiy</b> olindi. Toʻlov kiritilgach aniq summaga almashadi.`;
   $('estnote').hidden=false;
  }else $('estnote').hidden=true;
 
- days30=[];
+ const days30=[];
  for(let i=29;i>=0;i--)days30.push(dayStats(E,addDays(today,-i),fx));
- dailyChart($('chart'),days30);
- const s30i=days30.reduce((a,d)=>a+d.in,0),s30o=days30.reduce((a,d)=>a+d.out,0);
- $('c30').innerHTML=`30 kunda: kirim <b>${short(s30i)}</b>, chiqim <b>${short(s30o)}</b>, sof <b class="${s30i-s30o<0?'neg':'pos'}">${money(s30i-s30o)}</b>.`;
- $('ctrows').innerHTML=[...days30].reverse().map(d=>`<tr><td class="l">${dayLabel(d.date)}</td><td>${fmt(d.in)}</td><td>${fmt(d.out)}</td><td class="${d.in-d.out<0?'neg':'pos'}">${fmt(d.in-d.out)}</td></tr>`).join('');
+ const s30i=days30.reduce((a,d)=>a+d.in,0),s30o=days30.reduce((a,d)=>a+d.out,0),s30=s30i-s30o;
+ $('c30').innerHTML=`30 kunda: kirim <b>${short(s30i)}</b>, chiqim <b>${short(s30o)}</b>, sof foyda <b class="${s30<0?'neg':'pos'}">${money(s30)}</b>`;
+ $('ctrows').innerHTML=[...days30].reverse().map(d=>`<tr data-d="${d.date}" tabindex="0" title="Batafsil"><td class="l">${dayLabel(d.date)}</td><td>${dual(d.in)}</td><td>${dual(d.out)}</td><td class="${d.in-d.out<0?'neg':'pos'}">${dual(d.in-d.out)}</td></tr>`).join('');
 
  $('mname1').textContent=$('mname2').textContent=MO[now.getMonth()]+' 1–'+dn;
  $('outBars').innerHTML=catBars(S.outCats,'out',S.est);$('inBars').innerHTML=catBars(S.inCats,'in');
-
- $('recent').innerHTML=E.length?E.slice(0,12).map(e=>`<tr><td class="l">${dayLabel(e.date)}</td><td class="l"><span class="tag"><i class="dot d-${e.type}"></i>${esc(catName(e.cat))}<span class="meta">${periodLabel(e)}</span></span></td><td>${e.qty!=null?fq(e.qty)+' '+((CAT[e.cat]||{}).unit||''):'—'}</td><td class="${e.type==='in'?'pos':''}">${e.type==='in'?'+':'−'}${fmt(e.amount)}</td><td class="l wrap">${esc(e.note||'')}</td></tr>`).join('')
-  :'<tr><td colspan="5" class="empty">Hali yozuv yoʻq</td></tr>';
  $('empty').hidden=E.length>0;
 }
-// Grafik yashirin turganda kengligi 0 boʻladi — koʻrsatilganda qayta chiziladi
-$('tview').onclick=()=>{const t=$('ctable').hidden;$('ctable').hidden=!t;$('chart').hidden=t;$('tview').textContent=t?'Grafik':'Jadval';if(!t&&days30.length)dailyChart($('chart'),days30)};
-let rt;addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(()=>days30.length&&dailyChart($('chart'),days30),150)});
+
+/* ---------- Kun boʻyicha kirim / chiqim oynasi ---------- */
+// types: ['in'], ['out'] yoki ikkalasi (jadvaldagi kun bosilganda)
+function openDay(types,date){
+ if(!FX)return;
+ date=date||iso(new Date());
+ const T=dayStats(E,date,FX),TL=E.filter(e=>e.date===date),both=types.length>1,net=T.in-T.out;
+ const isToday=date===iso(new Date());
+ const rowsOf=type=>{
+  const isIn=type==='in';
+  const r=TL.filter(e=>e.type===type&&!isFixed(e)).sort((a,b)=>b.amount-a.amount).map(e=>{
+   const u=(CAT[e.cat]||{}).unit||'',d=[];
+   if(e.qty)d.push(fq(e.qty)+(u?' '+u:'')+' × '+fmt(e.amount/e.qty)+' soʻm');
+   if(e.note)d.push(esc(e.note));
+   return `<div class="md-r"><b>${esc(catName(e.cat))}</b><span>${d.join(' · ')||'&nbsp;'}</span><div class="a ${isIn?'pos':''}">${isIn?'+':'−'}${fmt(e.amount)}</div></div>`;
+  });
+  if(!isIn&&T.fix)r.push(`<div class="md-r"><b>Oylik chiqimlar ulushi</b><span>oylik toʻlovlarning bir kunlik qismi</span><div class="a">−${fmt(T.fix)}</div></div>`);
+  const body=r.join('')||`<div class="empty">${isIn?'Kirim':'Chiqim'} kiritilmagan</div>`;
+  return both?`<div class="md-s"><span><i class="dot d-${type}"></i>${isIn?'Kirim':'Chiqim'}</span><b>${money(isIn?T.in:T.out)}</b></div>`+body:body;
+ };
+ if(both){
+  $('dlgT').textContent=dayFull(date)+' · sof foyda';
+  $('dlgTot').innerHTML=`<span class="${net<0?'neg':'pos'}">${money(net)}</span>`;
+ }else{
+  const isIn=types[0]==='in';
+  $('dlgT').textContent=(isToday?'Bugungi ':'')+(isIn?(isToday?'kirim':'Kirim'):(isToday?'chiqim':'Chiqim'))+' · '+dayFull(date);
+  $('dlgTot').innerHTML=`<span class="${isIn?'pos':''}">${money(isIn?T.in:T.out)}</span>`;
+ }
+ $('dlgB').innerHTML=types.map(rowsOf).join('');
+ $('dlgF').hidden=both;
+ $('dlgF').innerHTML=`<span>${isToday?'Bugungi sof foyda':'Sof foyda'}</span><b class="${net<0?'neg':'pos'}">${money(net)}</b>`;
+ $('dlg').showModal();
+}
+$('ctrows').addEventListener('click',e=>{const r=e.target.closest('tr[data-d]');if(r)openDay(['in','out'],r.dataset.d)});
+$('ctrows').addEventListener('keydown',e=>{const r=e.target.closest('tr[data-d]');if(r&&(e.key==='Enter'||e.key===' ')){e.preventDefault();openDay(['in','out'],r.dataset.d)}});
+$('kpis').addEventListener('click',e=>{const k=e.target.closest('[data-dlg]');if(k)openDay([k.dataset.dlg])});
+$('kpis').addEventListener('keydown',e=>{const k=e.target.closest('[data-dlg]');if(k&&(e.key==='Enter'||e.key===' ')){e.preventDefault();openDay([k.dataset.dlg])}});
+$('dlgX').onclick=()=>$('dlg').close();
+$('dlg').addEventListener('click',e=>{if(e.target===$('dlg'))$('dlg').close()});
+
+/* ---------- Tovuqlar va tuxum yigʻimi: istalgan kun ---------- */
+const sumArr=a=>(a||[]).reduce((s,v)=>s+(v||0),0);
+function layDays(){return LAY?LAY.recs.map(r=>({...layDay(r),dead:r.dead?sumArr(r.dead):null,broken:r.broken?sumArr(r.broken):null})).filter(d=>d.hens):[]}
+let LD=[],li=-1;
+function layInit(){
+ const cur=LD[li]&&LD[li].date,pick=$('layCard').querySelector('.daypick');
+ LD=layDays();
+ if(!LD.length){$('ltiles').innerHTML='<div class="empty wide">Hali kiritilmagan</div>';pick.hidden=true;return}
+ pick.hidden=false;
+ const today=iso(new Date());
+ $('lday').innerHTML=LD.map((d,i)=>`<option value="${i}">${d.date===today?'Bugun':dayLabel(d.date)}</option>`).reverse().join('');
+ const keep=LD.findIndex(d=>d.date===cur);
+ layShow(keep>=0?keep:LD.length-1);
+}
+function layShow(i){
+ li=i;const d=LD[i],nf=(v,u)=>v==null?'—<small>kiritilmagan</small>':fmt(v)+`<small>${u}</small>`;
+ $('lday').value=i;$('lprev').disabled=i<=0;$('lnext').disabled=i>=LD.length-1;
+ $('lnote').hidden=!(i===LD.length-1&&d.date!==iso(new Date()));
+ $('lnote').textContent=`Bugungi maʼlumot hali kiritilmagan — oxirgi kiritilgan kun: ${dayFull(d.date)}`;
+ $('ltiles').innerHTML=
+  tile('Tovuqlar soni',fmt(d.hens)+'<small>bosh</small>')+
+  tile('Oʻlgan tovuqlar',nf(d.dead,'bosh'),d.dead?'bad':'')+
+  tile('Olingan tuxum',fmt(d.eggs)+'<small>dona</small>')+
+  tile('Siniq tuxum',nf(d.broken,'dona'))+
+  tile('Chiqqan klitka',fq(d.eggs/30)+'<small>klitka</small>')+
+  tile('Tuxum berish',pctStr(d.pct),'hl');
+}
+$('lday').onchange=()=>layShow(+$('lday').value);
+$('lprev').onclick=()=>li>0&&layShow(li-1);
+$('lnext').onclick=()=>li<LD.length-1&&layShow(li+1);
 
 async function load(){
  const now=new Date(),today=iso(now);
  // 3 oy oldindan: oʻtgan oy ish haqi keyingi oyda toʻlanishi va taxminiy summa uchun
  const from=iso(new Date(now.getFullYear(),now.getMonth()-3,1));
  try{
-  const [e,l]=await Promise.all([getEntries(from,today),getLay(addDays(today,-30),today).catch(()=>null)]);
-  E=e;LAY=l;actual();
+  const [e,l]=await Promise.all([getEntries(from,today),getLay(addDays(today,-730),today).catch(()=>null)]);
+  E=e;LAY=l;actual();layInit();
   $('err').hidden=true;
   const last=Math.max(0,...E.map(x=>x.ts||0));
-  $('upd').textContent=last?'Yangilangan: '+dayLabel(iso(new Date(last)))+', '+hm(last):'';
+  $('upd').textContent=last?dayLabel(iso(new Date(last)))+', '+hm(last):'';
  }catch(err){$('err').textContent='Maʼlumotni yuklab boʻlmadi: '+err.message;$('err').hidden=false}
 }
 load();setInterval(load,60000);
+// Kirishni qayd qilish (sana, qurilma, shahar) — sahifa ochilganda bir marta
+try{fetch('/api/visit',{method:'POST',keepalive:true}).catch(()=>{})}catch(e){}
 </script>
 </body>
 </html>
