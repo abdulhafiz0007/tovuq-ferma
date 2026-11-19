@@ -106,19 +106,20 @@ function cleanEntry(b) {
 // (sotilgan klitka × FELEKA_PRICE) va kunlik ish haqi (oylik ÷ 30) yoʻq boʻlsa qoʻshiladi.
 const FELEKA_PRICE = Number(process.env.FELEKA_PRICE) || 550;
 const SALARY_MONTH = Number(process.env.SALARY_MONTH) || 112600000;
-const AUTO_FEL = 'feleka, avtomatik', AUTO_ISH = 'kunlik ish haqi, avtomatik';
+// Avtomatik yozuvlar koʻrinmaydigan `auto` maydoni bilan belgilanadi (eski yozuvlarda izoh boʻlgan)
+const isAutoFel = e => e.cat === 'klitka' && (e.auto === 'fel' || e.note === 'feleka, avtomatik');
 const newId = date => date.slice(0, 7) + '.' + crypto.randomBytes(6).toString('hex');
 async function syncAuto(date) {
   const day = (await getEntries([date.slice(0, 7)])).filter(e => e.date === date);
   const qty = day.filter(e => e.cat === 'tuxum').reduce((a, e) => a + (e.qty || 0), 0);
-  const fel = day.filter(e => e.cat === 'klitka' && e.note === AUTO_FEL);
+  const fel = day.filter(isAutoFel);
   for (const e of fel.slice(qty ? 1 : 0)) await delEntry(e.id);
   if (qty) {
     const amount = Math.round(qty * FELEKA_PRICE);
-    if (!fel[0] || fel[0].qty !== qty || fel[0].amount !== amount)
-      await putEntry({ date, type: 'out', cat: 'klitka', amount, qty, period: null, note: AUTO_FEL, id: fel[0] ? fel[0].id : newId(date), ts: Date.now() });
+    if (!fel[0] || fel[0].qty !== qty || fel[0].amount !== amount || fel[0].note)
+      await putEntry({ date, type: 'out', cat: 'klitka', amount, qty, period: null, note: '', auto: 'fel', id: fel[0] ? fel[0].id : newId(date), ts: Date.now() });
     if (!day.some(e => e.cat === 'ish'))
-      await putEntry({ date, type: 'out', cat: 'ish', amount: Math.round(SALARY_MONTH / 30), qty: null, period: null, note: AUTO_ISH, id: newId(date), ts: Date.now() });
+      await putEntry({ date, type: 'out', cat: 'ish', amount: Math.round(SALARY_MONTH / 30), qty: null, period: null, note: '', auto: 'ish', id: newId(date), ts: Date.now() });
   }
 }
 const syncSafe = async (...dates) => { for (const d of new Set(dates)) try { await syncAuto(d); } catch (e) { console.error('syncAuto', d, e.message); } };
@@ -199,6 +200,7 @@ app.put('/api/entries/:id', auth, async (req, res) => {
   try {
     const old = (await getEntries([id.slice(0, 7)])).find(x => x.id === id);
     if (!old) return res.status(404).json({ error: 'Yozuv topilmadi' });
+    if (old.auto) e.auto = old.auto;
     if (e.id !== id) await delEntry(id);
     await putEntry(e);
     if (old.cat === 'tuxum' || e.cat === 'tuxum') await syncSafe(old.date, e.date);
