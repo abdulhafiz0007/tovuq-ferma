@@ -101,6 +101,28 @@ function cleanEntry(b) {
   return { date: b.date, type: b.type, cat: b.cat, amount, qty, period, note: String(b.note || '').trim().slice(0, 200) };
 }
 
+/* ---------- Tuxum sotuvidan avtomatik chiqimlar ---------- */
+// Tuxum sotuvi kiritilsa/oʻzgarsa/oʻchirilsa, oʻsha kunning feleka chiqimi qayta hisoblanadi
+// (sotilgan klitka × FELEKA_PRICE) va kunlik ish haqi (oylik ÷ 30) yoʻq boʻlsa qoʻshiladi.
+const FELEKA_PRICE = Number(process.env.FELEKA_PRICE) || 550;
+const SALARY_MONTH = Number(process.env.SALARY_MONTH) || 112600000;
+const AUTO_FEL = 'feleka, avtomatik', AUTO_ISH = 'kunlik ish haqi, avtomatik';
+const newId = date => date.slice(0, 7) + '.' + crypto.randomBytes(6).toString('hex');
+async function syncAuto(date) {
+  const day = (await getEntries([date.slice(0, 7)])).filter(e => e.date === date);
+  const qty = day.filter(e => e.cat === 'tuxum').reduce((a, e) => a + (e.qty || 0), 0);
+  const fel = day.filter(e => e.cat === 'klitka' && e.note === AUTO_FEL);
+  for (const e of fel.slice(qty ? 1 : 0)) await delEntry(e.id);
+  if (qty) {
+    const amount = Math.round(qty * FELEKA_PRICE);
+    if (!fel[0] || fel[0].qty !== qty || fel[0].amount !== amount)
+      await putEntry({ date, type: 'out', cat: 'klitka', amount, qty, period: null, note: AUTO_FEL, id: fel[0] ? fel[0].id : newId(date), ts: Date.now() });
+    if (!day.some(e => e.cat === 'ish'))
+      await putEntry({ date, type: 'out', cat: 'ish', amount: Math.round(SALARY_MONTH / 30), qty: null, period: null, note: AUTO_ISH, id: newId(date), ts: Date.now() });
+  }
+}
+const syncSafe = async (...dates) => { for (const d of new Set(dates)) try { await syncAuto(d); } catch (e) { console.error('syncAuto', d, e.message); } };
+
 /* ---------- Sessiya (imzolangan cookie) ---------- */
 const sign = v => crypto.createHmac('sha256', SECRET).update(v).digest('base64url');
 const h = s => crypto.createHash('sha256').update(String(s)).digest();
@@ -160,9 +182,9 @@ app.get('/api/entries', async (req, res) => {
 app.post('/api/entries', auth, async (req, res) => {
   const e = cleanEntry(req.body);
   if (typeof e === 'string') return res.status(400).json({ error: e });
-  e.id = e.date.slice(0, 7) + '.' + crypto.randomBytes(6).toString('hex');
+  e.id = newId(e.date);
   e.ts = Date.now();
-  try { await putEntry(e); res.json(e); }
+  try { await putEntry(e); if (e.cat === 'tuxum') await syncSafe(e.date); res.json(e); }
   catch (err) { res.status(500).json({ error: 'Saqlab boʻlmadi. Bazani (Upstash) ulang.' }); }
 });
 
@@ -175,15 +197,23 @@ app.put('/api/entries/:id', auth, async (req, res) => {
   e.id = e.date.slice(0, 7) === id.slice(0, 7) ? id : e.date.slice(0, 7) + '.' + id.slice(8);
   e.ts = Date.now();
   try {
-    if (e.id !== id && !(await delEntry(id))) return res.status(404).json({ error: 'Yozuv topilmadi' });
+    const old = (await getEntries([id.slice(0, 7)])).find(x => x.id === id);
+    if (!old) return res.status(404).json({ error: 'Yozuv topilmadi' });
+    if (e.id !== id) await delEntry(id);
     await putEntry(e);
+    if (old.cat === 'tuxum' || e.cat === 'tuxum') await syncSafe(old.date, e.date);
     res.json(e);
   } catch (err) { res.status(500).json({ error: 'Saqlab boʻlmadi' }); }
 });
 
 app.delete('/api/entries/:id', auth, async (req, res) => {
   if (!ID_RE.test(req.params.id)) return res.status(400).json({ error: 'ID notoʻgʻri' });
-  try { res.json({ ok: await delEntry(req.params.id) }); }
+  try {
+    const id = req.params.id, old = (await getEntries([id.slice(0, 7)])).find(x => x.id === id);
+    const ok = await delEntry(id);
+    if (ok && old.cat === 'tuxum') await syncSafe(old.date);
+    res.json({ ok });
+  }
   catch (err) { res.status(500).json({ error: 'Oʻchirib boʻlmadi' }); }
 });
 
