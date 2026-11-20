@@ -299,7 +299,7 @@ $('dlg').addEventListener('click',e=>{if(e.target===$('dlg'))$('dlg').close()});
 
 /* ---------- Tovuqlar va tuxum yigʻimi: istalgan kun ---------- */
 const sumArr=a=>(a||[]).reduce((s,v)=>s+(v||0),0);
-function layDays(){return LAY?LAY.recs.map(r=>({...layDay(r),dead:r.dead?sumArr(r.dead):null,broken:r.broken?sumArr(r.broken):null})).filter(d=>d.hens):[]}
+function layDays(){return LAY?LAY.recs.map(r=>({...layDay(r),dead:r.dead?sumArr(r.dead):null,broken:r.broken?sumArr(r.broken):null,trays:r.trays?r.eggs.reduce((s,v,i)=>s+(v==null?0:r.trays[i]??Math.floor(v/30)),0):null})).filter(d=>d.hens):[]}
 let LD=[],li=-1;
 function layInit(){
  const cur=LD[li]&&LD[li].date,pick=$('layCard').querySelector('.daypick');
@@ -321,7 +321,7 @@ function layShow(i){
   tile('Oʻlgan tovuqlar',nf(d.dead,'bosh'),d.dead?'bad':'')+
   tile('Olingan tuxum',fmt(d.eggs)+'<small>dona</small>')+
   tile('Siniq tuxum',nf(d.broken,'dona'))+
-  tile('Chiqqan klitka',fq(d.eggs/30)+'<small>klitka</small>')+
+  tile('Chiqqan klitka',(d.trays!=null?fmt(d.trays):fq(d.eggs/30))+'<small>klitka</small>')+
   tile('Tuxum berish',pctStr(d.pct),'hl');
 }
 $('lday').onchange=()=>layShow(+$('lday').value);

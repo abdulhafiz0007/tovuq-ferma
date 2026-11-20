@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Tuxum yigʻimi</title>
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css">
+<style>
+main{max-width:520px}
+.login{margin-top:8vh}
+.fld{display:grid;grid-template-columns:minmax(0,1fr) 170px;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line)}
+.fld label{margin:0;font-size:15px;color:var(--ink);font-weight:500}
+.fld label small{display:block;font-size:12px;color:var(--mut);font-weight:400}
+.fld input,.fld select{font-size:18px;font-weight:600;text-align:right;min-height:48px}
+.pct{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:14px 0 4px;padding:14px 16px;background:var(--gbg);border-radius:12px}
+.pct span{font-weight:600}
+.pct b{font-size:30px;font-weight:800;color:var(--g);font-variant-numeric:tabular-nums}
+.save{width:100%;justify-content:center;min-height:52px;font-size:17px;margin-top:14px}
+.msg{min-height:20px;text-align:center;margin-top:10px}
+.big-login input{font-size:18px;min-height:50px}
+@media (max-width:400px){.fld{grid-template-columns:minmax(0,1fr) 140px}}
+</style>
+</head>
+<body>
+<header class="top">
+ <div class="in">
+  <div class="brand"><i aria-hidden="true">◐</i><div>Tuxum yigʻimi<small>Kunlik daftar</small></div></div>
+  <button class="ghost" id="out" hidden>Chiqish</button>
+ </div>
+</header>
+<main>
+
+<section class="card login" id="login" hidden>
+ <h1>Kirish</h1>
+ <p class="note" style="margin:0 0 16px">Parolni yozing.</p>
+ <form id="lform" class="big-login">
+  <label for="p">Parol</label>
+  <input id="p" type="password" autocomplete="current-password" required>
+  <button class="save">Kirish</button>
+  <div class="msg neg" id="lerr" role="alert"></div>
+ </form>
+</section>
+
+<section id="panel" hidden>
+ <form class="card" id="form" autocomplete="off">
+  <div class="fld"><label for="date">Sana</label><input id="date" type="date" required></div>
+  <div class="fld" id="sexbox" hidden><label for="sex">Sex</label><select id="sex"></select></div>
+  <div class="fld"><label for="hens">Tovuqlar soni<small>bosh</small></label><input id="hens" inputmode="numeric" required></div>
+  <div class="fld"><label for="dead">Oʻlgan tovuqlar<small>bosh</small></label><input id="dead" inputmode="numeric"></div>
+  <div class="fld"><label for="eggs">Olingan tuxum<small>dona</small></label><input id="eggs" inputmode="numeric" required></div>
+  <div class="fld"><label for="broken">Siniq tuxum<small>dona</small></label><input id="broken" inputmode="numeric"></div>
+  <div class="fld"><label for="trays">Chiqqan klitka<small>klitka</small></label><input id="trays" inputmode="numeric"></div>
+  <div class="pct"><span>Tuxum berish</span><b id="pct">—</b></div>
+  <button class="save" id="save">Saqlash</button>
+  <div class="msg note" id="msg" role="status"></div>
+ </form>
+
+ <div class="card" style="margin-top:14px">
+  <div class="ch" style="margin-bottom:4px"><h2>Oxirgi kunlar</h2></div>
+  <div class="scroll"><table>
+   <thead><tr><th class="l">Sana</th><th>Tuxum</th><th>Klitka</th><th>Foiz</th></tr></thead>
+   <tbody id="hist"></tbody>
+  </table></div>
+ </div>
+</section>
+
+</main>
+<script src="common.js"></script>
+<script>
+const F={date:$('date'),sex:$('sex'),hens:$('hens'),dead:$('dead'),eggs:$('eggs'),broken:$('broken'),trays:$('trays')};
+const NUMS=['hens','dead','eggs','broken','trays'];
+const today=iso(new Date());
+let LAY={hens:[],recs:[]},trayAuto=true;
+
+// Raqamlarni 58 201 koʻrinishida yozish
+const val=el=>{const s=el.value.replace(/\D/g,'');return s?+s:null};
+const put=(el,v)=>{el.value=v==null?'':fmt(v)};
+NUMS.forEach(k=>F[k].addEventListener('input',()=>{
+ const el=F[k],tail=el.value.slice(el.selectionStart).replace(/\D/g,'').length;
+ put(el,val(el));
+ let p=el.value.length,n=0;while(p>0&&n<tail){if(/\d/.test(el.value[p-1]))n++;p--}
+ if(document.activeElement===el)el.setSelectionRange(p,p);
+}));
+
+function calc(){
+ const h=val(F.hens),e=val(F.eggs);
+ $('pct').textContent=h&&e!=null?pctStr(e/h*100):'—';
+}
+F.trays.addEventListener('input',()=>{trayAuto=F.trays.value===''});
+F.eggs.addEventListener('input',()=>{const e=val(F.eggs);if(trayAuto)put(F.trays,e==null?null:Math.floor(e/30))});
+F.hens.addEventListener('input',calc);F.eggs.addEventListener('input',calc);
+
+const sexI=()=>+F.sex.value;
+// Tanlangan kun va sex: yozuv boʻlsa oʻsha, boʻlmasa oldingi kungi tovuqlar soni − oʻlganlar
+function fill(){
+ const d=F.date.value,s=sexI(),rec=LAY.recs.find(r=>r.date===d);
+ const g=(r,k)=>r&&r[k]?r[k][s]:null;
+ if(rec&&rec.eggs[s]!=null){
+  put(F.hens,rec.hens[s]);put(F.eggs,rec.eggs[s]);put(F.dead,g(rec,'dead'));put(F.broken,g(rec,'broken'));
+  put(F.trays,g(rec,'trays')??Math.floor(rec.eggs[s]/30));trayAuto=false;
+  $('save').textContent='Oʻzgartirib saqlash';$('msg').textContent='Bu kun kiritilgan. Xato boʻlsa, toʻgʻrilab saqlang.';
+ }else{
+  const prev=LAY.recs.filter(r=>r.date<d&&r.hens[s]).pop();
+  put(F.hens,prev?prev.hens[s]-(g(prev,'dead')||0):(LAY.hens[s]||null));
+  ['eggs','dead','broken','trays'].forEach(k=>put(F[k],null));trayAuto=true;
+  $('save').textContent='Saqlash';$('msg').textContent='';
+ }
+ calc();
+}
+function hist(){
+ const s=sexI(),rows=LAY.recs.filter(r=>r.eggs[s]!=null&&r.hens[s]).slice(-10).reverse();
+ $('hist').innerHTML=rows.length?rows.map(r=>`<tr><td class="l">${r.date===today?'Bugun':dayLabel(r.date)}</td><td>${fmt(r.eggs[s])}</td><td>${fmt(r.trays&&r.trays[s]!=null?r.trays[s]:Math.floor(r.eggs[s]/30))}</td><td>${pctStr(r.eggs[s]/r.hens[s]*100)}</td></tr>`).join('')
+  :'<tr><td colspan="4" class="empty">Hali kiritilmagan</td></tr>';
+}
+async function load(){
+ try{LAY=await getLay(addDays(today,-40),today)}catch(e){$('msg').textContent=e.message;return}
+ // Sex tanlash faqat tovuqli sex bittadan koʻp boʻlsa koʻrinadi
+ const cur=F.sex.value,sx=LAY.hens.map((h,i)=>h?i:-1).filter(i=>i>=0);
+ if(!sx.length)sx.push(0);
+ F.sex.innerHTML=sx.map(i=>`<option value="${i}">${i+1}-sex</option>`).join('');
+ if(sx.includes(+cur)&&cur!=='')F.sex.value=cur;
+ $('sexbox').hidden=sx.length<2;
+ fill();hist();
+}
+F.date.onchange=fill;F.sex.onchange=()=>{fill();hist()};
+
+$('form').onsubmit=async ev=>{
+ ev.preventDefault();$('msg').textContent='';
+ const b={sex:sexI()};NUMS.forEach(k=>b[k]=val(F[k]));
+ if(!b.hens){$('msg').textContent='Tovuqlar sonini kiriting';F.hens.focus();return}
+ if(b.eggs==null){$('msg').textContent='Olingan tuxum sonini kiriting';F.eggs.focus();return}
+ $('save').disabled=true;
+ try{
+  const r=await fetch('/api/wlay/'+F.date.value,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)});
+  if(r.status===401){location.reload();return}
+  const j=await r.json().catch(()=>({}));
+  if(!r.ok){$('msg').textContent=j.error||'Saqlab boʻlmadi ('+r.status+')';return}
+  toast('Saqlandi ✓ '+dayLabel(j.date)+': '+pctStr(j.eggs[b.sex]/j.hens[b.sex]*100));
+  await load();
+ }catch(e){$('msg').textContent='Internet yoʻq. Qayta urinib koʻring.'}
+ finally{$('save').disabled=false}
+};
+
+function show(){
+ $('login').hidden=true;$('panel').hidden=false;$('out').hidden=false;
+ F.date.value=today;F.date.max=today;F.date.min=addDays(today,-7);load();
+}
+async function init(){
+ let a=false;try{a=(await (await fetch('/api/wme',{cache:'no-store'})).json()).ok}catch(e){}
+ if(a)show();else{$('login').hidden=false;$('p').focus()}
+}
+$('lform').onsubmit=async ev=>{
+ ev.preventDefault();$('lerr').textContent='';
+ const r=await fetch('/api/wlogin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:$('p').value})});
+ if(r.ok){$('p').value='';show()}else{$('lerr').textContent=(await r.json().catch(()=>({}))).error||'Xatolik'}
+};
+$('out').onclick=async()=>{await fetch('/api/wlogout',{method:'POST'});location.reload()};
+init();
+</script>
+</body>
+</html>

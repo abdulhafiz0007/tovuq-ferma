@@ -96,16 +96,16 @@ tfoot td{font-weight:700;border-bottom:0;padding-top:12px}
    <form class="card" id="lform2" autocomplete="off">
     <div class="ch"><h2>Tuxum yigʻimi</h2><input id="ldate" type="date" required style="width:auto" aria-label="Sana"></div>
     <div class="scroll"><table class="lay">
-     <thead><tr><th class="l">Sex</th><th>Tovuqlar soni</th><th>Yigʻilgan tuxum, dona</th><th>Siniq</th><th>Padej</th><th>Tuxum berish</th></tr></thead>
+     <thead><tr><th class="l">Sex</th><th>Tovuqlar soni</th><th>Yigʻilgan tuxum, dona</th><th>Siniq</th><th>Padej</th><th>Klitka</th><th>Tuxum berish</th></tr></thead>
      <tbody id="lrows"></tbody>
-     <tfoot><tr><td class="l">Jami</td><td id="lhens"></td><td id="leggs"></td><td id="lbroken"></td><td id="ldead"></td><td id="lpct"></td></tr></tfoot>
+     <tfoot><tr><td class="l">Jami</td><td id="lhens"></td><td id="leggs"></td><td id="lbroken"></td><td id="ldead"></td><td id="ltrays"></td><td id="lpct"></td></tr></tfoot>
     </table></div>
     <div class="actions">
      <button>Saqlash</button>
      <button type="button" class="ghost" id="ldel" hidden>Shu kunni oʻchirish</button>
      <span class="note" id="lmsg" style="margin:0" role="status"></span>
     </div>
-    <p class="note">Tovuq yoʻq sexni 0 qoldiring. Tovuqlar soni oʻzgarsa (oʻlim, yangi tovuq), shu yerda yangilang — u keyingi kunlarga ham oʻtadi.</p>
+    <p class="note">Tuxum yigʻuvchilar uchun alohida sahifa: <a href="/yigim" target="_blank">/yigim</a> (faqat shu maʼlumotlarni kiritadi). Tovuq yoʻq sexni 0 qoldiring. Tovuqlar soni oʻzgarsa (oʻlim, yangi tovuq), shu yerda yangilang — u keyingi kunlarga ham oʻtadi.</p>
    </form>
    <div class="card">
     <div class="ch"><h2>Oxirgi 14 kun</h2></div>
@@ -307,7 +307,7 @@ $('csv').onclick=()=>{
 /* ---------- Tuxum yigʻimi ---------- */
 let LY={hens:[],recs:[]};
 const LI=[...Array(SEXES)].map((_,i)=>i);
-$('lrows').innerHTML=LI.map(i=>`<tr><td class="l">${i+1}-sex</td><td><input class="lh" data-i="${i}" inputmode="numeric" aria-label="${i+1}-sex tovuqlar soni"></td><td><input class="le" data-i="${i}" inputmode="numeric" aria-label="${i+1}-sex yigʻilgan tuxum"></td><td><input class="lb" data-i="${i}" inputmode="numeric" aria-label="${i+1}-sex siniq tuxum"></td><td><input class="ld" data-i="${i}" inputmode="numeric" aria-label="${i+1}-sex padej"></td><td class="lp" data-i="${i}"></td></tr>`).join('');
+$('lrows').innerHTML=LI.map(i=>`<tr><td class="l">${i+1}-sex</td><td><input class="lh" data-i="${i}" inputmode="numeric" aria-label="${i+1}-sex tovuqlar soni"></td><td><input class="le" data-i="${i}" inputmode="numeric" aria-label="${i+1}-sex yigʻilgan tuxum"></td><td><input class="lb" data-i="${i}" inputmode="numeric" aria-label="${i+1}-sex siniq tuxum"></td><td><input class="ld" data-i="${i}" inputmode="numeric" aria-label="${i+1}-sex padej"></td><td><input class="lt" data-i="${i}" inputmode="numeric" aria-label="${i+1}-sex chiqqan klitka"></td><td class="lp" data-i="${i}"></td></tr>`).join('');
 const lin=c=>[...$('lrows').querySelectorAll(c)];
 lin('input').forEach(numInput);
 const intOrNull=el=>{const v=num(el);return Number.isFinite(v)?Math.round(v):null};
@@ -319,7 +319,7 @@ function layTotals(){
  $('leggs').textContent=d.eggs?fmt(d.eggs)+' · '+fq(d.eggs/30)+' klitka':'';
  $('lpct').textContent=d.hens?pctStr(d.pct):'';
  const sum=c=>{const a=lin(c).map(intOrNull).filter(v=>v!=null);return a.length?fmt(a.reduce((x,v)=>x+v,0)):''};
- $('lbroken').textContent=sum('.lb');$('ldead').textContent=sum('.ld');
+ $('lbroken').textContent=sum('.lb');$('ldead').textContent=sum('.ld');$('ltrays').textContent=sum('.lt');
 }
 $('lrows').addEventListener('input',layTotals);
 // Tanlangan kunning yozuvi boʻlsa oʻsha, boʻlmasa joriy tovuqlar soni bilan ochiladi
@@ -331,6 +331,7 @@ async function loadLayDay(){
  lin('.le').forEach((el,i)=>setNum(el,rec?rec.eggs[i]:null));
  lin('.lb').forEach((el,i)=>setNum(el,rec&&rec.broken?rec.broken[i]:null));
  lin('.ld').forEach((el,i)=>setNum(el,rec&&rec.dead?rec.dead[i]:null));
+ lin('.lt').forEach((el,i)=>setNum(el,rec&&rec.trays?rec.trays[i]:null));
  $('ldel').hidden=!rec;
  layTotals();
 }
@@ -343,9 +344,9 @@ async function loadLayHist(){
 $('ldate').onchange=loadLayDay;
 $('lform2').onsubmit=async ev=>{
  ev.preventDefault();$('lmsg').textContent='';
- const hens=lin('.lh').map(intOrNull),eggs=lin('.le').map(intOrNull),broken=lin('.lb').map(intOrNull),dead=lin('.ld').map(intOrNull);
+ const hens=lin('.lh').map(intOrNull),eggs=lin('.le').map(intOrNull),broken=lin('.lb').map(intOrNull),dead=lin('.ld').map(intOrNull),trays=lin('.lt').map(intOrNull);
  if(eggs.every(v=>v==null)){$('lmsg').textContent='Tuxum sonini kiriting';lin('.le')[2].focus();return}
- const r=await fetch('/api/lay/'+$('ldate').value,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({hens,eggs,broken,dead})});
+ const r=await fetch('/api/lay/'+$('ldate').value,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({hens,eggs,broken,dead,trays})});
  if(r.status===401){location.reload();return}
  const j=await r.json().catch(()=>({}));
  if(!r.ok){$('lmsg').textContent=j.error||'Saqlab boʻlmadi ('+r.status+')';return}

@@ -9,6 +9,8 @@ app.use(express.json({ limit: '20kb' }));
 
 const USER = process.env.ADMIN_USER || 'admin';
 const PASS = process.env.ADMIN_PASS || 'admin123';
+// Tuxum yigʻuvchilar sahifasi (/yigim) uchun alohida parol — faqat tuxum yigʻimini kirita oladi
+const WPASS = process.env.WORKER_PASS || 'tuxum123';
 const SECRET = process.env.SESSION_SECRET ||
   crypto.createHash('sha256').update('ferma|' + USER + '|' + PASS).digest('hex');
 
@@ -128,23 +130,27 @@ const syncSafe = async (...dates) => { for (const d of new Set(dates)) try { awa
 const sign = v => crypto.createHmac('sha256', SECRET).update(v).digest('base64url');
 const h = s => crypto.createHash('sha256').update(String(s)).digest();
 const same = (a, b) => crypto.timingSafeEqual(h(a), h(b));
-const makeToken = () => {
-  const p = Buffer.from(JSON.stringify({ exp: Date.now() + 7 * 864e5 })).toString('base64url');
+const makeToken = (role, days = 7) => {
+  const p = Buffer.from(JSON.stringify({ exp: Date.now() + days * 864e5, ...(role ? { role } : {}) })).toString('base64url');
   return p + '.' + sign(p);
 };
-const okToken = t => {
-  if (!t) return false;
+const readToken = t => {
+  if (!t) return null;
   const [p, s] = t.split('.');
-  if (!p || !s || !same(sign(p), s)) return false;
-  try { return JSON.parse(Buffer.from(p, 'base64url').toString()).exp > Date.now(); } catch { return false; }
+  if (!p || !s || !same(sign(p), s)) return null;
+  try { const j = JSON.parse(Buffer.from(p, 'base64url').toString()); return j.exp > Date.now() ? j : null; } catch { return null; }
 };
+// Admin tokenida role boʻlmaydi; ishchi tokeni (role: 'w') admin sifatida qabul qilinmaydi
+const okToken = t => { const j = readToken(t); return !!j && !j.role; };
+const okWorker = t => { const j = readToken(t); return !!j && j.role === 'w'; };
 const getCookie = (req, n) => {
   const c = (req.headers.cookie || '').split(';').map(x => x.trim()).find(x => x.startsWith(n + '='));
   return c ? c.slice(n.length + 1) : '';
 };
-const setCookie = (req, res, val, maxAge) =>
-  res.setHeader('Set-Cookie', `fa=${val}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAge}` + (req.secure ? '; Secure' : ''));
+const setCookie = (req, res, val, maxAge, name = 'fa') =>
+  res.setHeader('Set-Cookie', `${name}=${val}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAge}` + (req.secure ? '; Secure' : ''));
 const auth = (req, res, next) => okToken(getCookie(req, 'fa')) ? next() : res.status(401).json({ error: 'Kirish kerak' });
+const authW = (req, res, next) => okWorker(getCookie(req, 'fw')) || okToken(getCookie(req, 'fa')) ? next() : res.status(401).json({ error: 'Kirish kerak' });
 
 /* ---------- Login urinishlarini cheklash ---------- */
 const tries = new Map();
@@ -167,6 +173,21 @@ app.post('/api/login', (req, res) => {
 });
 
 app.post('/api/logout', (req, res) => { setCookie(req, res, '', 0); res.json({ ok: true }); });
+
+// Tuxum yigʻuvchilar: faqat parol, sessiya 60 kun
+app.post('/api/wlogin', (req, res) => {
+  if (blocked(req.ip)) return res.status(429).json({ error: 'Koʻp urinish. 10 daqiqadan keyin qayta urinib koʻring.' });
+  if (same((req.body || {}).password || '', WPASS)) {
+    tries.delete(req.ip);
+    setCookie(req, res, makeToken('w', 60), 60 * 86400, 'fw');
+    return res.json({ ok: true });
+  }
+  const t = tries.get(req.ip) || { n: 0, t: 0 };
+  tries.set(req.ip, { n: t.n + 1, t: Date.now() });
+  res.status(401).json({ error: 'Parol notoʻgʻri' });
+});
+app.post('/api/wlogout', (req, res) => { setCookie(req, res, '', 0, 'fw'); res.json({ ok: true }); });
+app.get('/api/wme', (req, res) => res.json({ ok: okWorker(getCookie(req, 'fw')) || okToken(getCookie(req, 'fa')) }));
 app.get('/api/me', (req, res) => res.json({ admin: okToken(getCookie(req, 'fa')) }));
 
 app.get('/api/entries', async (req, res) => {
@@ -254,6 +275,7 @@ async function delLay(date) {
   if (!d.recs || !d.recs[date]) return false;
   delete d.recs[date]; writeLF(d); return true;
 }
+const LAY_NAME = { dead: 'Oʻlgan tovuqlar', broken: 'Siniq tuxum', trays: 'Chiqqan klitka' };
 const countArr = (a, max) => Array.isArray(a) && a.length === SEX_N &&
   a.every(v => v === null || (Number.isInteger(v) && v >= 0 && v <= max));
 
@@ -274,13 +296,40 @@ app.put('/api/lay/:date', auth, async (req, res) => {
   const hens = b.hens.map(v => v || 0);
   if (b.eggs.some((v, i) => v && !hens[i])) return res.status(400).json({ error: 'Tuxum kiritilgan sexda tovuqlar soni yoʻq' });
   // Ixtiyoriy: padej (oʻlgan tovuq) va siniq tuxum, sexlar boʻyicha
-  for (const k of ['dead', 'broken']) if (b[k] != null && !countArr(b[k], 1e6)) return res.status(400).json({ error: (k === 'dead' ? 'Padej' : 'Siniq tuxum') + ' soni notoʻgʻri' });
+  for (const k of ['dead', 'broken', 'trays']) if (b[k] != null && !countArr(b[k], 1e6)) return res.status(400).json({ error: LAY_NAME[k] + ' soni notoʻgʻri' });
   const r = { date, hens, eggs: b.eggs, ts: Date.now() };
-  if (b.dead && b.dead.some(v => v != null)) r.dead = b.dead;
-  if (b.broken && b.broken.some(v => v != null)) r.broken = b.broken;
+  for (const k of ['dead', 'broken', 'trays']) if (b[k] && b[k].some(v => v != null)) r[k] = b[k];
   try {
     // Joriy tovuqlar soni faqat eng oxirgi sana kiritilganda yangilanadi (eski kunni tuzatish uni orqaga qaytarmaydi)
     const d = await getLay();
+    const latest = d.recs.every(x => x.date <= date);
+    await putLay(r, latest ? hens : null);
+    res.json(r);
+  } catch (e) { res.status(500).json({ error: 'Saqlab boʻlmadi' }); }
+});
+// Tuxum yigʻuvchilar sahifasidan: bitta sex boʻyicha bir kunlik yozuv (oʻsha kunning boshqa sexlari saqlanib qoladi).
+// Faqat oxirgi 7 kun va bugun uchun — eski kunlarni faqat admin tuzatadi.
+const tashkentToday = () => new Date(Date.now() + 5 * 3600e3).toISOString().slice(0, 10);
+const shiftDate = (s, n) => new Date(Date.parse(s + 'T00:00:00Z') + n * 864e5).toISOString().slice(0, 10);
+app.put('/api/wlay/:date', authW, async (req, res) => {
+  const date = req.params.date, b = req.body || {}, t = tashkentToday();
+  if (!validDate(date) || date > shiftDate(t, 1) || date < shiftDate(t, -7)) return res.status(400).json({ error: 'Faqat oxirgi 7 kunni kiritish mumkin' });
+  const sex = b.sex;
+  if (!Number.isInteger(sex) || sex < 0 || sex >= SEX_N) return res.status(400).json({ error: 'Sex notoʻgʻri' });
+  const n = (v, max, req) => v == null || v === '' ? (req ? undefined : null) : Number.isInteger(v) && v >= 0 && v <= max ? v : undefined;
+  const v = { hens: n(b.hens, 1e6, true), eggs: n(b.eggs, 1e6, true), dead: n(b.dead, 1e6), broken: n(b.broken, 1e6), trays: n(b.trays, 1e5) };
+  if (!v.hens) return res.status(400).json({ error: 'Tovuqlar sonini kiriting' });
+  if (v.eggs === undefined) return res.status(400).json({ error: 'Olingan tuxum sonini kiriting' });
+  for (const k of ['dead', 'broken', 'trays']) if (v[k] === undefined) return res.status(400).json({ error: LAY_NAME[k] + ' soni notoʻgʻri' });
+  try {
+    const d = await getLay();
+    const old = d.recs.find(x => x.date === date);
+    const arr = k => (old && old[k] ? old[k].slice() : Array(SEX_N).fill(null));
+    const hens = old ? old.hens.slice() : d.hens.slice();
+    hens[sex] = v.hens;
+    const r = { date, hens, eggs: arr('eggs'), ts: Date.now() };
+    r.eggs[sex] = v.eggs;
+    for (const k of ['dead', 'broken', 'trays']) { const a = arr(k); a[sex] = v[k]; if (a.some(x => x != null)) r[k] = a; }
     const latest = d.recs.every(x => x.date <= date);
     await putLay(r, latest ? hens : null);
     res.json(r);
@@ -341,6 +390,7 @@ app.get('/api/visits', auth, async (req, res) => {
 
 /* ---------- Sahifalar ---------- */
 app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
+app.get('/yigim', (req, res) => res.sendFile(path.join(__dirname, 'public', 'yigim.html')));
 app.use(express.static(path.join(__dirname, 'public')));
 
 module.exports = app;
