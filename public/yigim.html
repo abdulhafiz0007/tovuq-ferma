@@ -13,7 +13,12 @@ main{max-width:520px}
 .fld{display:grid;grid-template-columns:minmax(0,1fr) 170px;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line)}
 .fld label{margin:0;font-size:15px;color:var(--ink);font-weight:500}
 .fld label small{display:block;font-size:12px;color:var(--mut);font-weight:400}
-.fld input,.fld select{font-size:18px;font-weight:600;text-align:right;min-height:48px}
+.fld input,.fld select{font-size:18px;font-weight:600;text-align:right;min-height:48px;min-width:0;width:100%;max-width:100%}
+/* iPhone Safari sana maydoniga oʻz minimal kengligini beradi — ustundan chiqib ketmasligi uchun */
+.fld input[type=date]{-webkit-appearance:none;appearance:none;display:block;line-height:1.2;padding-top:12px;padding-bottom:12px}
+.fld input[type=date]::-webkit-date-and-time-value{text-align:right;margin:0}
+.fld input[type=date]::-webkit-calendar-picker-indicator{margin-left:6px}
+.fld>*{min-width:0}
 .pct{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:14px 0 4px;padding:14px 16px;background:var(--gbg);border-radius:12px}
 .pct span{font-weight:600}
 .pct b{font-size:30px;font-weight:800;color:var(--g);font-variant-numeric:tabular-nums}
