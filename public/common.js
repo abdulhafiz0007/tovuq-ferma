@@ -2,6 +2,7 @@
 const CATS = {
   in: [
     ['tuxum', 'Tuxum sotuvi', 'klitka'],
+    ['siniq', 'Siniq tuxum sotuvi', 'klitka', 0, 20000],
     ['tovuq', 'Tovuq sotuvi', 'bosh'],
     ['gong', 'Goʻng sotuvi', 'qop'],
     ['boshqa_k', 'Boshqa kirim', '']
@@ -21,7 +22,8 @@ const CATS = {
 };
 const CAT = {};
 // 4-ustun = 1: oylik chiqim (bir marta toʻlanadi, dashboardda oy kunlariga taqsimlanadi)
-for (const t in CATS) for (const [k, n, u, m] of CATS[t]) CAT[k] = { name: n, unit: u, type: t, monthly: !!m };
+// 5-ustun: odatiy narx (admin formada avtomatik qoʻyiladi)
+for (const t in CATS) for (const [k, n, u, m, p] of CATS[t]) CAT[k] = { name: n, unit: u, type: t, monthly: !!m, price: p || 0 };
 const MONTHLY = new Set(Object.keys(CAT).filter(k => CAT[k].monthly));
 const catName = k => (CAT[k] || {}).name || k;
 

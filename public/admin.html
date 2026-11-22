@@ -96,7 +96,7 @@ tfoot td{font-weight:700;border-bottom:0;padding-top:12px}
    <form class="card" id="lform2" autocomplete="off">
     <div class="ch"><h2>Tuxum yigʻimi</h2><input id="ldate" type="date" required style="width:auto" aria-label="Sana"></div>
     <div class="scroll"><table class="lay">
-     <thead><tr><th class="l">Sex</th><th>Tovuqlar soni</th><th>Yigʻilgan tuxum, dona</th><th>Siniq</th><th>Padej</th><th>Klitka</th><th>Tuxum berish</th></tr></thead>
+     <thead><tr><th class="l">Sex</th><th>Tovuqlar soni</th><th>Yigʻilgan tuxum, dona</th><th>Siniq, klitka</th><th>Padej</th><th>Klitka</th><th>Tuxum berish</th></tr></thead>
      <tbody id="lrows"></tbody>
      <tfoot><tr><td class="l">Jami</td><td id="lhens"></td><td id="leggs"></td><td id="lbroken"></td><td id="ldead"></td><td id="ltrays"></td><td id="lpct"></td></tr></tfoot>
     </table></div>
@@ -188,6 +188,10 @@ function unit(){
  document.querySelectorAll('.qp').forEach(e=>e.hidden=!u);
  $('amtbox').style.gridColumn=u?'':'1/-1';
  if(!u)F.qty.value=F.price.value='';
+ // Odatiy narxi bor toifa (siniq tuxum — 20 000) tanlansa, narx avtomatik qoʻyiladi
+ const p=(CAT[F.cat.value]||{}).price;
+ F.price.placeholder=p?fmt(p):'masalan: 36 000';
+ if(p&&!editId){setNum(F.price,p);fromQtyPrice();return}
  showCalc();
 }
 function showCalc(){

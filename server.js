@@ -109,11 +109,13 @@ function cleanEntry(b) {
 const FELEKA_PRICE = Number(process.env.FELEKA_PRICE) || 550;
 const SALARY_MONTH = Number(process.env.SALARY_MONTH) || 112600000;
 // Avtomatik yozuvlar koʻrinmaydigan `auto` maydoni bilan belgilanadi (eski yozuvlarda izoh boʻlgan)
+// Feleka oddiy tuxum ham, siniq tuxum sotuviga ham ketadi
+const isEgg = c => c === 'tuxum' || c === 'siniq';
 const isAutoFel = e => e.cat === 'klitka' && (e.auto === 'fel' || e.note === 'feleka, avtomatik');
 const newId = date => date.slice(0, 7) + '.' + crypto.randomBytes(6).toString('hex');
 async function syncAuto(date) {
   const day = (await getEntries([date.slice(0, 7)])).filter(e => e.date === date);
-  const qty = day.filter(e => e.cat === 'tuxum').reduce((a, e) => a + (e.qty || 0), 0);
+  const qty = day.filter(e => isEgg(e.cat)).reduce((a, e) => a + (e.qty || 0), 0);
   const fel = day.filter(isAutoFel);
   for (const e of fel.slice(qty ? 1 : 0)) await delEntry(e.id);
   if (qty) {
@@ -206,7 +208,7 @@ app.post('/api/entries', auth, async (req, res) => {
   if (typeof e === 'string') return res.status(400).json({ error: e });
   e.id = newId(e.date);
   e.ts = Date.now();
-  try { await putEntry(e); if (e.cat === 'tuxum') await syncSafe(e.date); res.json(e); }
+  try { await putEntry(e); if (isEgg(e.cat)) await syncSafe(e.date); res.json(e); }
   catch (err) { res.status(500).json({ error: 'Saqlab boʻlmadi. Bazani (Upstash) ulang.' }); }
 });
 
@@ -224,7 +226,7 @@ app.put('/api/entries/:id', auth, async (req, res) => {
     if (old.auto) e.auto = old.auto;
     if (e.id !== id) await delEntry(id);
     await putEntry(e);
-    if (old.cat === 'tuxum' || e.cat === 'tuxum') await syncSafe(old.date, e.date);
+    if (isEgg(old.cat) || isEgg(e.cat)) await syncSafe(old.date, e.date);
     res.json(e);
   } catch (err) { res.status(500).json({ error: 'Saqlab boʻlmadi' }); }
 });
@@ -234,7 +236,7 @@ app.delete('/api/entries/:id', auth, async (req, res) => {
   try {
     const id = req.params.id, old = (await getEntries([id.slice(0, 7)])).find(x => x.id === id);
     const ok = await delEntry(id);
-    if (ok && old.cat === 'tuxum') await syncSafe(old.date);
+    if (ok && isEgg(old.cat)) await syncSafe(old.date);
     res.json({ ok });
   }
   catch (err) { res.status(500).json({ error: 'Oʻchirib boʻlmadi' }); }
