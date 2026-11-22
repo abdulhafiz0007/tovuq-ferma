@@ -54,6 +54,9 @@ a.k:hover,.k[role=button]:hover{border-color:var(--mut)}
 /* 30 kun */
 #d30{margin-bottom:14px}
 #d30 .note{margin:4px 0 0;font-size:14px}
+/* Sarlavha va 30 kunlik jami — chiziq bilan ajratilgan, izoh undan pastda (oldingi koʻrinish kabi) */
+#d30 .ch{padding-bottom:14px;margin-bottom:0;border-bottom:1px solid var(--line)}
+#d30 .hint30{margin:12px 0 8px}
 
 /* Jadval */
 #ctrows tr{cursor:pointer}
@@ -170,7 +173,7 @@ dialog::backdrop{background:rgba(10,20,15,.55);backdrop-filter:blur(2px)}
 
 <section class="card" id="d30">
  <div class="ch" style="display:block"><h2>Oxirgi 30 kunda kirim va chiqim</h2><p class="note" id="c30"></p></div>
- <p class="note" style="margin:8px 0 6px">Kunni bossangiz, oʻsha kunning kirim va chiqimi batafsil chiqadi</p>
+ <p class="note hint30">Kunni bossangiz, oʻsha kunning kirim va chiqimi batafsil chiqadi</p>
  <div class="scroll" id="ctable"><table><thead><tr><th class="l">Sana</th><th>Kirim</th><th>Chiqim</th><th>Sof foyda</th></tr></thead><tbody id="ctrows"></tbody></table></div>
 </section>
 </main>
@@ -223,8 +226,8 @@ function actual(){
   ['<i class="dot d-out"></i>Bugungi chiqim',short(T.out)+U,'out'],
   ['Oʻrtacha kunlik sof',`<span class="${net<0?'neg':'pos'}">${short(net/dn)}</span>${U}`],
   ['Oʻrtacha kunlik chiqim',short(S.out/dn)+U],
-  ['Shu oy sotilgan tuxum',fmt(kl)+'<small>klitka</small>'],
-  ['1 klitka tannarxi',kl?fmt(S.out/kl)+U:'—']
+  ['Bugun sotilgan tuxum',fmt(kt)+'<small>klitka</small>'],
+  ['Tuxum berish',ld?pctStr(ld.pct):'—','#layCard']
  ].map(kpi).join('');
  if(S.est.length){
   $('estnote').innerHTML=`<b>${monthName(mk)}</b> uchun ${S.est.map(c=>catName(c).toLowerCase()).join(', ')} hali kiritilmagan — hisobda oʻtgan oy summasi <b>taxminiy</b> olindi. Toʻlov kiritilgach aniq summaga almashadi.`;
