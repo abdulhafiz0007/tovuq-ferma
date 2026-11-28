@@ -36,6 +36,8 @@ main{padding-top:18px}
 .k{display:flex;flex-direction:column;justify-content:space-between;gap:6px;padding:14px 16px;height:100%;min-height:92px}
 .k .l{white-space:nowrap;overflow:hidden;min-width:0}
 .k .v{font-size:clamp(19px,2.2vw,22px)}
+.k .sub{font-size:12px;font-weight:400;color:var(--mut);margin-top:3px;white-space:nowrap}
+.k .sub b{font-weight:600;color:inherit;font-size:inherit}
 a.k,.k[role=button]{color:inherit;text-decoration:none;cursor:pointer;transition:border-color .15s,transform .15s}
 a.k:hover,.k[role=button]:hover{border-color:var(--mut)}
 .k[role=button]:active{transform:scale(.98)}
@@ -192,10 +194,10 @@ let E=[],LAY=null,FX=null;
 function setDate(){const d=new Date();$('date').textContent=`${d.getDate()}-${MO[d.getMonth()]}, ${WD[d.getDay()]}`}
 setDate();setInterval(setDate,60000);
 const U='<small>soʻm</small>';
-const kpi=([l,v,act])=>{
+const kpi=([l,v,act,sub])=>{
  const link=act&&act[0]==='#',t=link?'a':'div';
  const attr=!act?'':link?` href="${act}"`:` role="button" tabindex="0" data-dlg="${act}"`;
- return `<${t} class="card k"${attr}><div class="l">${l}${act&&!link?'<span class="go" aria-hidden="true">›</span>':''}</div><div class="v">${v}</div></${t}>`;
+ return `<${t} class="card k"${attr}><div class="l">${l}${act&&!link?'<span class="go" aria-hidden="true">›</span>':''}</div><div class="v">${v}${sub?`<div class="sub">${sub}</div>`:''}</div></${t}>`;
 };
 // Keng ekranda toʻliq son, telefonda qisqa (mln)
 const dual=n=>`<span class="f-full">${fmt(n)}</span><span class="s">${short(n)}</span>`;
@@ -221,12 +223,13 @@ function actual(){
 
  // Shu oy sotilgan tuxum (oddiy + siniq, klitka) va 1 klitkaning tannarxi (shu oy chiqimi ÷ sotilgan klitka)
  const kl=S.L.reduce((a,e)=>a+((e.cat==='tuxum'||e.cat==='siniq')&&e.qty?e.qty:0),0);
+ const sk=S.L.reduce((a,e)=>a+(e.cat==='siniq'&&e.qty?e.qty:0),0);
  $('kpis').innerHTML=[
   ['<i class="dot d-in"></i>Bugungi kirim',short(T.in)+U,'in'],
   ['<i class="dot d-out"></i>Bugungi chiqim',short(T.out)+U,'out'],
   ['Oʻrtacha kunlik sof',`<span class="${net<0?'neg':'pos'}">${short(net/dn)}</span>${U}`],
   ['Oʻrtacha kunlik chiqim',short(S.out/dn)+U],
-  ['Shu oy sotilgan tuxum',fmt(kl)+'<small>klitka</small>'],
+  ['Shu oy sotilgan tuxum',fmt(kl)+'<small>klitka</small>',null,`shundan siniq: <b>${fmt(sk)}</b> klitka`],
   ['1 klitka tannarxi',kl?fmt(S.out/kl)+U:'—']
  ].map(kpi).join('');
  if(S.est.length){
