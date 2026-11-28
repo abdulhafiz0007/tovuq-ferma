@@ -326,12 +326,13 @@ function layTotals(){
  $('lbroken').textContent=sum('.lb');$('ldead').textContent=sum('.ld');$('ltrays').textContent=sum('.lt');
 }
 $('lrows').addEventListener('input',layTotals);
-// Tanlangan kunning yozuvi boʻlsa oʻsha, boʻlmasa joriy tovuqlar soni bilan ochiladi
+// Tanlangan kunning yozuvi boʻlsa oʻsha, boʻlmasa (xuddi /yigim kabi) oldingi kungi tovuqlar soni − oʻsha kungi padej
 async function loadLayDay(){
  const d=$('ldate').value||today;$('lmsg').textContent='';
- let r;try{r=await getLay(d,d)}catch(e){$('lmsg').textContent=e.message;return}
- const rec=r.recs[0];
- lin('.lh').forEach((el,i)=>setNum(el,(rec?rec.hens:r.hens)[i]||0));
+ let r;try{r=await getLay(addDays(d,-60),d)}catch(e){$('lmsg').textContent=e.message;return}
+ const rec=r.recs.find(x=>x.date===d);
+ const prevHens=i=>{const p=r.recs.filter(x=>x.date<d&&x.hens[i]).pop();return p?p.hens[i]-(p.dead&&p.dead[i]||0):r.hens[i]};
+ lin('.lh').forEach((el,i)=>setNum(el,(rec?rec.hens[i]:prevHens(i))||0));
  lin('.le').forEach((el,i)=>setNum(el,rec?rec.eggs[i]:null));
  lin('.lb').forEach((el,i)=>setNum(el,rec&&rec.broken?rec.broken[i]:null));
  lin('.ld').forEach((el,i)=>setNum(el,rec&&rec.dead?rec.dead[i]:null));
